@@ -1,0 +1,21 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+**/*.py[cod]
+*$py.class
+
+# VS Code
+.vscode/
+
+# Model weights
+**/*.pth
+**/*.onnx
+
+# XPose build files
+liveportrait/utils/dependencies/XPose/models/UniPose/ops/build
+liveportrait/utils/dependencies/XPose/models/UniPose/ops/dist
+liveportrait/utils/dependencies/XPose/models/UniPose/ops/MultiScaleDeformableAttention.egg-info
+
+# Output
+animations/
