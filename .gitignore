@@ -19,3 +19,4 @@ liveportrait/utils/dependencies/XPose/models/UniPose/ops/MultiScaleDeformableAtt
 
 # Output
 animations/
+tmp/
