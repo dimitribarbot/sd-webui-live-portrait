@@ -30,7 +30,6 @@ class XPoseRunner(object):
         self.timer = Timer()
         # Load cached embeddings if available
         try:
-            print("embeddings_cache_path", embeddings_cache_path)
             tensors_9 = load_file(f'{embeddings_cache_path}_9.safetensors', device=self.device)
             self.ins_text_embeddings_9 = tensors_9["ins_text_embeddings_9"]
             self.kpt_text_embeddings_9 = tensors_9["kpt_text_embeddings_9"]

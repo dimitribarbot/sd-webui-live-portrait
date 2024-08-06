@@ -1,3 +1,4 @@
+import sys
 from fastapi import FastAPI
 import gradio as gr
 
@@ -10,9 +11,9 @@ from liveportrait.config.base_config import make_abs_path
 
 
 def live_portrait_api(_: gr.Blocks, app: FastAPI):
-    @app.post("/live-portrait/video")
-    async def execute_video() -> str:
-        print("Live Portrait API /live-portrait/video received request")
+    @app.post("/live-portrait/human")
+    async def execute_human() -> str:
+        print("Live Portrait API /live-portrait/human received request")
         live_portrait_pipeline = LivePortraitPipeline(
             inference_cfg=InferenceConfig(),
             crop_cfg=CropConfig()
@@ -26,12 +27,15 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             driving=driving
         ))
         
-        print("Live Portrait API /live-portrait/video finished")
+        print("Live Portrait API /live-portrait/human finished")
         return "OK"
     
-    @app.post("/live-portrait/animal/video")
-    async def execute_animal_video() -> str:
-        print("Live Portrait API /live-portrait/animal/video received request")
+    @app.post("/live-portrait/animal")
+    async def execute_animal() -> str:
+        print("Live Portrait API /live-portrait/animal received request")
+        if sys.platform.startswith('darwin'):
+            raise OSError("XPose model, necessary to generate animal videos, is incompatible with MacOS systems.")
+
         live_portrait_pipeline_animal = LivePortraitPipelineAnimal(
             inference_cfg=InferenceConfig(),
             crop_cfg=CropConfig()
@@ -47,7 +51,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             flag_stitching=False
         ))
         
-        print("Live Portrait API /live-portrait/animal/video finished")
+        print("Live Portrait API /live-portrait/animal finished")
         return "OK"
 
 

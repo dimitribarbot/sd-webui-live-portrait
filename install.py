@@ -96,6 +96,9 @@ def install_xpose():
     """
     Install XPose.
     """
+    if sys.platform.startswith('darwin'):
+        # XPose is incompatible with MacOS
+        return
     op_root = os.path.join(repo_root, "liveportrait", "utils", "dependencies", "XPose", "models", "UniPose", "ops")
     op_build = os.path.join(op_root, "build")
     op_lib = os.path.join(op_root, "lib")
@@ -227,7 +230,8 @@ def download_liveportrait_animals_models():
 def download_model_weights():
     download_insightface_models()
     download_liveportrait_models()
-    download_liveportrait_animals_models()
+    if not sys.platform.startswith('darwin'):
+        download_liveportrait_animals_models()
 
 
 install_requirements(main_req_file)
