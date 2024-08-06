@@ -42,7 +42,7 @@ If necessary, it can be downloaded from: https://huggingface.co/KwaiVGI/LivePort
 - `/live-portrait/human`: inference for humans.
 - `/live-portrait/animal` : inference for animals (not available for MacOS users).
 
-Parameters are the same as LivePortrait ones (see output of command `python inference.py --help` in LivePortrait repository) except for :
+Parameters are the same as LivePortrait ones (see output of command `python inference.py --help` in LivePortrait repository) except for:
 - `source`: it can either be a path to an existing file (as in LivePortrait) or an url or a base64 encoded string. For url without file extension or base64 encoded string, the parameter `source_file_extension` must also be filled with a valid extension corresponding to the given source (e.g. `.jpg`).
 - `driving`: it can either be a path to an existing file (as in LivePortrait) or an url or a base64 encoded string. For url without file extension or base64 encoded string, the parameter `driving_file_extension` must also be filled with a valid extension corresponding to the given driving video (e.g. `.mp4`).
 - `send_output`: `true` if you want output videos to be sent as base64 encoded strings, `false` otherwise.
