@@ -33,7 +33,7 @@ For Windows users, replace all `export` with `set` at the beginning of each line
 
 As we have downgraded the pytorch version, to avoid unnecessary warnings at each launch of Automatic1111, we add the `--skip-version-check` flag to the command line arguments.
 
-After these modifications, close Stable Diffusion WebUI if not done and restart it using the flags `--reinstall-torch` and `--reinstall-xformers` (if you're using `xformers`). These flags can then be removed for subsequent lanches of Automatic1111.
+After these modifications, close Stable Diffusion WebUI if not done and restart it using the flags `--reinstall-torch` and `--reinstall-xformers` (if you're using `xformers`). These flags can then be removed for subsequent launches of Automatic1111.
 
 If everything went well, you should be able to use animal mode in the `Live Portrait` tab.
 
