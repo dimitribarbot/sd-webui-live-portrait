@@ -41,6 +41,9 @@ class LivePortraitPipelineAnimal(object):
         if crop_cfg.model == 'mediapipe':
             from .utils.cropper_mediapipe import Cropper
             self.cropper: Cropper = Cropper(crop_cfg=crop_cfg, image_type='animal_face', flag_use_half_precision=inference_cfg.flag_use_half_precision)
+        elif crop_cfg.model == 'facealignment':
+            from .utils.cropper_face_alignment import Cropper
+            self.cropper: Cropper = Cropper(crop_cfg=crop_cfg, image_type='animal_face', flag_use_half_precision=inference_cfg.flag_use_half_precision)
         else:
             from .utils.cropper import Cropper
             self.cropper: Cropper = Cropper(crop_cfg=crop_cfg, image_type='animal_face', flag_use_half_precision=inference_cfg.flag_use_half_precision)

@@ -45,8 +45,13 @@ def on_ui_tabs():
             gradio_pipeline_animal = None
             
             crop_model = cast(
-                Literal['insightface', 'mediapipe'],
+                Literal['insightface', 'mediapipe', 'facealignment'],
                 cast(str, shared.opts.data.get("live_portrait_human_face_detector", 'insightface')).lower()
+            )
+
+            face_alignment_detector = cast(
+                Literal['blazeface', 'blazeface_back_camera', 'sfd'],
+                cast(str, shared.opts.data.get("live_portrait_face_alignment_detector", 'blazeface_back_camera')).lower().replace(' ', '_')
             )
 
             flag_do_torch_compile = cast(
@@ -59,7 +64,8 @@ def on_ui_tabs():
                     flag_do_torch_compile=flag_do_torch_compile
                 ),
                 crop_cfg=CropConfig(
-                    model=crop_model
+                    model=crop_model,
+                    face_alignment_detector=face_alignment_detector
                 ),
                 args=ArgumentConfig(
                     output_dir=output_dir
@@ -675,7 +681,18 @@ def on_ui_settings():
             default="InsightFace",
             label="Human face detector",
             component=gr.Radio,
-            component_args={"choices": ["InsightFace", "MediaPipe"]},
+            component_args={"choices": ["InsightFace", "MediaPipe", "FaceAlignment"]},
+            section=section,
+        ).needs_reload_ui(),
+    )
+
+    shared.opts.add_option(
+        "live_portrait_face_alignment_detector",
+        shared.OptionInfo(
+            default="BlazeFace Back Camera",
+            label="Face alignment detector",
+            component=gr.Radio,
+            component_args={"choices": ["BlazeFace", "BlazeFace Back Camera", "SFD"]},
             section=section,
         ).needs_reload_ui(),
     )

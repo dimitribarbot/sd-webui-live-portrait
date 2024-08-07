@@ -47,7 +47,8 @@ In the Automatic1111 settings tab, under the Live Portrait section, you can find
 
 ![image](./assets/docs/settings.png)
 
-- `Human face detector` (`live_portrait_human_face_detector` entry in `config.json`): configures the face detector model for human inference, either the default original InsightFace or MediaPipe.
+- `Human face detector` (`live_portrait_human_face_detector` entry in `config.json`): configures the face detector model for human inference, either the default original InsightFace, MediaPipe or Face Alignment.
+- `Face alignment detector` (`live_portrait_face_alignment_detector` entry in `config.json`): configures the face detector model for human inference when using Face Alignment.
 - `Enable torch.compile for faster inference` (`live_portrait_flag_do_torch_compile` entry in `config.json`): the first-time inference triggers an optimization process (about one minute), making subsequent inferences 20-30% faster. Performance gains may vary with different CUDA versions.
 
 ## Models
@@ -56,12 +57,12 @@ In the Automatic1111 settings tab, under the Live Portrait section, you can find
 
 Model files go here (automatically downloaded if the folder is not present during install): `stable-diffusion-webui/models/liveportrait` (human) and `stable-diffusion-webui/models/liveportrait_animals` (animals).  
 
-If necessary, pickle files have all been converted to safetensors by Kijai. They can be downloaded from: https://huggingface.co/Kijai/LivePortrait_safetensors/tree/main (thanks to him).  
+Pickle files have all been converted to safetensors by Kijai. If necessary, they can be downloaded from: https://huggingface.co/Kijai/LivePortrait_safetensors/tree/main (thanks to him).  
 
 ### Face detectors
-For human mode, you can either use the original default Insightface, or Google's MediaPipe (see [Settings](#settings) section above or [API](#api) section below). 
+For human mode, you can either use the original default [Insightface](https://github.com/deepinsight/insightface), or [Google's MediaPipe](https://github.com/google-ai-edge/mediapipe), or [Face Alignment](https://github.com/1adrianb/face-alignment) (see [Settings](#settings) section above or [API](#api) section below). 
 
-Biggest difference is the license: Insightface is strictly for NON-COMMERCIAL use. MediaPipe is a bit worse at detection, and can't run on GPU in Windows, though it's much faster on CPU compared to Insightface.
+Biggest difference is the license: Insightface is strictly for NON-COMMERCIAL use. MediaPipe is a bit worse at detection, and can't run on GPU in Windows, though it's much faster on CPU compared to Insightface. Face Alignment can use blazeface back camera model (or SFD), it's far better for smaller faces than MediaPipe, that only can use the blazeface short model. The warmup on the first run when using this can take a long time, but subsequent runs are quick.
 
 Insightface models go here (automatically downloaded if the folder is not present during install): `stable-diffusion-webui/models/insightface/models/buffalo_l`. If necessary, they can be downloaded from: https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip.
 
@@ -79,17 +80,20 @@ Parameters are the same as LivePortrait ones (see output of command `python infe
 - `driving`: it can either be a path to an existing file (as in LivePortrait) or an url or a base64 encoded string. For url without file extension or base64 encoded string, the parameter `driving_file_extension` must also be filled with a valid extension corresponding to the given driving video (e.g. `.mp4`).
 - `send_output`: `true` if you want output videos to be sent as base64 encoded strings, `false` otherwise.
 - `save_output`: `true` if you want output videos to be saved in `output_dir` (as in LivePortrait), `false` otherwise.
-- `human_face_detector`: `insightface` or `mediapipe`. Face detector to be used by human inference. Default to the `Human face detector` UI setting if defined or `insightface` if not set neither in settings nor in endpoint body.
+- `human_face_detector`: `insightface`, `mediapipe` or `facealignment`. Face detector to be used by human inference. Default to the `Human face detector` UI setting if defined or `insightface` if not set neither in settings nor in endpoint body.
+- `face_alignment_detector`: `blazeface`, `blazeface_back_camera` or `sfd`. Face detector to be used by human inference when Face Alignment is selected as `human_face_detector`. Default to the `Face alignment detector` UI setting if defined or `blazeface_back_camera` if not set neither in settings nor in endpoint body.
+- `face_alignment_detector_device`: `cuda`, `cpu` or `mps`. Device to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `cuda`.
+- `face_alignment_detector_dtype`: `fp16`, `bf16` or `fp32`. Device type to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `fp16`.
 
 ## Roadmap
 
 - [x] Add tabs with LivePortrait interface
 - [x] Add inference API endpoints
 - [x] Option to use MediaPipe as face detector for humans
-- [ ] Option to use FaceAlignment as face detector for humans
+- [x] Option to use FaceAlignment as face detector for humans
 - [ ] Add retargetting API endpoints
 
 ## Thanks
 Original author's link: https://liveportrait.github.io/
 
-This project uses a model converted by kijai: https://github.com/kijai/ComfyUI-LivePortraitKJ
+This project has been inspired and uses models converted by kijai: https://github.com/kijai/ComfyUI-LivePortraitKJ

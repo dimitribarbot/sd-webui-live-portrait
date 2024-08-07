@@ -122,10 +122,13 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         source_division: int = 2 # make sure the height and width of source image or video can be divided by this number
 
         ########## driving crop arguments ##########
-        human_face_detector: Literal[None, 'insightface', 'mediapipe'] = None # face detector to use for human inference ('insightface' by default)
+        human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
         scale_crop_driving_video: float = 2.2  # scale factor for cropping driving video
         vx_ratio_crop_driving_video: float = 0.  # adjust y offset
         vy_ratio_crop_driving_video: float = -0.1  # adjust x offset
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
+        face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
+        face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
 
 
     @app.post("/live-portrait/human")
@@ -157,14 +160,22 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             argument_cfg.output_dir = temp_output_dir
 
             default_crop_model = cast(
-                Literal['insightface', 'mediapipe'],
+                Literal['insightface', 'mediapipe', 'facealignment'],
                 cast(str, opts.data.get("live_portrait_human_face_detector", 'insightface')).lower()
+            )
+
+            default_face_alignment_detector = cast(
+                Literal['blazeface', 'blazeface_back_camera', 'sfd'],
+                cast(str, opts.data.get("live_portrait_face_alignment_detector", 'blazeface_back_camera')).lower().replace(' ', '_')
             )
 
             live_portrait_pipeline = LivePortraitPipeline(
                 inference_cfg=InferenceConfig(),
                 crop_cfg=CropConfig(
-                    model=payload.human_face_detector if payload.human_face_detector else default_crop_model
+                    model=payload.human_face_detector if payload.human_face_detector else default_crop_model,
+                    face_alignment_detector=payload.face_alignment_detector if payload.face_alignment_detector else default_face_alignment_detector,
+                    face_alignment_detector_device=payload.face_alignment_detector_device,
+                    face_alignment_detector_dtype=payload.face_alignment_detector_dtype
                 )
             )
 

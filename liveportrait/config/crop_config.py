@@ -21,12 +21,11 @@ except:
 
 @dataclass(repr=False)  # use repr from PrintableConfig
 class CropConfig(PrintableConfig):
-    model: Literal['insightface', 'mediapipe'] = 'insightface'
+    model: Literal['insightface', 'mediapipe', 'facealignment'] = 'insightface'
     insightface_root: str = os.path.join(models_path, 'insightface')
     landmark_ckpt_path: str = os.path.join(models_path, 'liveportrait', 'landmark.onnx')
     xpose_config_file_path: str = make_abs_path("../utils/dependencies/XPose/config_model/UniPose_SwinT.py")
     xpose_embedding_cache_path: str = make_abs_path('../utils/resources/clip_embedding')
-
     xpose_ckpt_path: str = os.path.join(models_path, 'liveportrait_animals', 'xpose.pth')
     device_id: int = 0  # gpu device id
     flag_force_cpu: bool = False  # force cpu inference, WIP
@@ -44,3 +43,6 @@ class CropConfig(PrintableConfig):
     vx_ratio_crop_driving_video: float = 0.0  # adjust y offset
     vy_ratio_crop_driving_video: float = -0.1  # adjust x offset
     direction: str = "large-small"  # direction of cropping
+    face_alignment_detector: Literal['blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
+    face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
+    face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
