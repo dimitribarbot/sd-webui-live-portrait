@@ -18,18 +18,22 @@ This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.c
 
 ### /!\ Important notes /!\
 
-XPose, the face detector model used for animal mode, is currently not working with MacOS and also not compatible with pytorch version 2.1.x which is the default version of today's Automatic1111 version v1.10.1. To allow animal mode to work correctly, you must downgrade your pytorch version to v2.0.1 and use cuda v1.18. To do that you can open the `stable-diffusion-webui/webui-user.sh` file (for Linux users) or `stable-diffusion-webui/webui-user.bat` (for Windows users) and make the following changes:
+XPose, the face detector model used for animal mode, is currently not working with MacOS and is not compatible with pytorch version 2.1.x which is the default version of today's Automatic1111 version v1.10.1. To allow animal mode to work correctly, you must downgrade your pytorch version to v2.0.1 and use cuda v1.18.  
+
+To do that you can open the `stable-diffusion-webui/webui-user.sh` file (for Linux users) or `stable-diffusion-webui/webui-user.bat` (for Windows users) and make the following changes:
 
 For Linux users, if you're using `xformers`, adjust or add the following lines (if you're not using `xformers`, remove the `--xformers` flag in `COMMANDLINE_ARGS` and remove the `XFORMERS_PACKAGE` line):
 ```
 export COMMANDLINE_ARGS="--skip-version-check --xformers"
-export TORCH_COMMAND="pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --index-url https://download.pytorch.org/whl/cu118"
+export TORCH_COMMAND="pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --extra-index-url https://download.pytorch.org/whl/cu118"
 export XFORMERS_PACKAGE="xformers==0.0.22"
 ```
 
 For Windows users, replace all `export` with `set` at the beginning of each line.
 
-Then, close Stable Diffusion WebUI if not done and restart it using the flags `--reinstall-torch` and `--reinstall-xformers` (if you're using `xformers`). These flags can then be removed for subsequent lanches of Automatic1111.
+As we have downgraded the pytorch version, to avoid unnecessary warnings at each launch of Automatic1111, we add the `--skip-version-check` flag to the command line arguments.
+
+After these modifications, close Stable Diffusion WebUI if not done and restart it using the flags `--reinstall-torch` and `--reinstall-xformers` (if you're using `xformers`). These flags can then be removed for subsequent lanches of Automatic1111.
 
 If everything went well, you should be able to use animal mode in the `Live Portrait` tab.
 
