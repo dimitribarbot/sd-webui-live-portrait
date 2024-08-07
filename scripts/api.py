@@ -140,6 +140,8 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         driving_extension = get_input_extension(payload.driving, payload.driving_file_extension)
 
         argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
+        inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
+        crop_cfg = partial_fields(CropConfig, payload.__dict__)
 
         fast_check_args(argument_cfg)
 
@@ -169,14 +171,14 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
                 cast(str, opts.data.get("live_portrait_face_alignment_detector", 'blazeface_back_camera')).lower().replace(' ', '_')
             )
 
+            crop_cfg.model = payload.human_face_detector if payload.human_face_detector else default_crop_model
+            crop_cfg.face_alignment_detector = payload.face_alignment_detector if payload.face_alignment_detector else default_face_alignment_detector
+            crop_cfg.face_alignment_detector_device = payload.face_alignment_detector_device
+            crop_cfg.face_alignment_detector_dtype = payload.face_alignment_detector_dtype
+
             live_portrait_pipeline = LivePortraitPipeline(
-                inference_cfg=InferenceConfig(),
-                crop_cfg=CropConfig(
-                    model=payload.human_face_detector if payload.human_face_detector else default_crop_model,
-                    face_alignment_detector=payload.face_alignment_detector if payload.face_alignment_detector else default_face_alignment_detector,
-                    face_alignment_detector_device=payload.face_alignment_detector_device,
-                    face_alignment_detector_dtype=payload.face_alignment_detector_dtype
-                )
+                inference_cfg=inference_cfg,
+                crop_cfg=crop_cfg
             )
 
             wfp, wfp_concat = live_portrait_pipeline.execute(argument_cfg)
@@ -214,9 +216,8 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         driving_extension = get_input_extension(payload.driving, payload.driving_file_extension)
 
         argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
-
-        # argument_cfg.driving_multiplier=1.75
-        # argument_cfg.flag_stitching=False
+        inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
+        crop_cfg = partial_fields(CropConfig, payload.__dict__)
 
         fast_check_args(argument_cfg)
 
@@ -237,8 +238,8 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             argument_cfg.output_dir = temp_output_dir
 
             live_portrait_pipeline_animal = LivePortraitPipelineAnimal(
-                inference_cfg=InferenceConfig(),
-                crop_cfg=CropConfig()
+                inference_cfg=inference_cfg,
+                crop_cfg=crop_cfg
             )
 
             wfp, wfp_concat, wfp_gif = live_portrait_pipeline_animal.execute(argument_cfg)

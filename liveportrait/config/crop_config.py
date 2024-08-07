@@ -29,7 +29,7 @@ class CropConfig(PrintableConfig):
     xpose_ckpt_path: str = os.path.join(models_path, 'liveportrait_animals', 'xpose.pth')
     device_id: int = 0  # gpu device id
     flag_force_cpu: bool = False  # force cpu inference, WIP
-    det_thresh: float = 0.1 # detection threshold
+    det_thresh: float = 0.15 # detection threshold
     ########## source image or video cropping option ##########
     dsize: int = 512  # crop size
     scale: float = 2.3  # scale factor
@@ -43,6 +43,7 @@ class CropConfig(PrintableConfig):
     vx_ratio_crop_driving_video: float = 0.0  # adjust y offset
     vy_ratio_crop_driving_video: float = -0.1  # adjust x offset
     direction: str = "large-small"  # direction of cropping
+    ########## face alignment option ##########
     face_alignment_detector: Literal['blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
     face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
     face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'

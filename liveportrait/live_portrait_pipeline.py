@@ -36,12 +36,15 @@ class LivePortraitPipeline(object):
     def __init__(self, inference_cfg: InferenceConfig, crop_cfg: CropConfig):
         self.live_portrait_wrapper: LivePortraitWrapper = LivePortraitWrapper(inference_cfg=inference_cfg)
         if crop_cfg.model == 'mediapipe':
+            log("Using MediaPipe cropper")
             from .utils.cropper_mediapipe import Cropper
             self.cropper: Cropper = Cropper(crop_cfg=crop_cfg)
         elif crop_cfg.model == 'facealignment':
+            log(f"Using FaceAlignment cropper with {crop_cfg.face_alignment_detector} detector")
             from .utils.cropper_face_alignment import Cropper
             self.cropper: Cropper = Cropper(crop_cfg=crop_cfg)
         else:
+            log("Using InsightFace cropper")
             from .utils.cropper import Cropper
             self.cropper: Cropper = Cropper(crop_cfg=crop_cfg)
 
