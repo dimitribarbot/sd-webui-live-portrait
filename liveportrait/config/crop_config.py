@@ -6,6 +6,7 @@ parameters used for crop faces
 
 import os
 from dataclasses import dataclass
+from typing import Literal
 
 from .base_config import PrintableConfig, make_abs_path
 
@@ -20,6 +21,7 @@ except:
 
 @dataclass(repr=False)  # use repr from PrintableConfig
 class CropConfig(PrintableConfig):
+    model: Literal['insightface', 'mediapipe'] = 'insightface'
     insightface_root: str = os.path.join(models_path, 'insightface')
     landmark_ckpt_path: str = os.path.join(models_path, 'liveportrait', 'landmark.onnx')
     xpose_config_file_path: str = make_abs_path("../utils/dependencies/XPose/config_model/UniPose_SwinT.py")

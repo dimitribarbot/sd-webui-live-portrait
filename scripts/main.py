@@ -2,9 +2,10 @@ import datetime
 import gradio as gr
 import os.path as osp
 from pathlib import Path
+from typing import cast, Literal
 
 import modules.scripts as scripts
-from modules import script_callbacks
+from modules import script_callbacks, shared
 from modules.paths_internal import data_path
 
 from liveportrait.utils.helper import load_description
@@ -42,9 +43,24 @@ def on_ui_tabs():
         if not gradio_pipeline:
             output_dir = osp.join(data_path, "outputs", "live-portrait", f"{datetime.date.today()}")
             gradio_pipeline_animal = None
+            
+            crop_model = cast(
+                Literal['insightface', 'mediapipe'],
+                cast(str, shared.opts.data.get("live_portrait_human_face_detector", 'insightface')).lower()
+            )
+
+            flag_do_torch_compile = cast(
+                bool,
+                shared.opts.data.get("live_portrait_flag_do_torch_compile", False)
+            )
+            
             gradio_pipeline = GradioPipeline(
-                inference_cfg=InferenceConfig(),
-                crop_cfg=CropConfig(),
+                inference_cfg=InferenceConfig(
+                    flag_do_torch_compile=flag_do_torch_compile
+                ),
+                crop_cfg=CropConfig(
+                    model=crop_model
+                ),
                 args=ArgumentConfig(
                     output_dir=output_dir
                 )
@@ -56,8 +72,16 @@ def on_ui_tabs():
         if not gradio_pipeline_animal:
             output_dir = osp.join(data_path, "outputs", "live-portrait", f"{datetime.date.today()}")
             gradio_pipeline = None
+
+            flag_do_torch_compile = cast(
+                bool,
+                shared.opts.data.get("live_portrait_flag_do_torch_compile", False)
+            )
+
             gradio_pipeline_animal = GradioPipelineAnimal(
-                inference_cfg=InferenceConfig(),
+                inference_cfg=InferenceConfig(
+                    flag_do_torch_compile=flag_do_torch_compile
+                ),
                 crop_cfg=CropConfig(),
                 args=ArgumentConfig(
                     output_dir=output_dir
@@ -642,4 +666,29 @@ def on_ui_tabs():
     return [(live_portrait, "Live Portrait", "live_portrait")]
 
 
+def on_ui_settings():
+    section = ("live_portrait", "Live Portrait")
+
+    shared.opts.add_option(
+        "live_portrait_human_face_detector",
+        shared.OptionInfo(
+            default="InsightFace",
+            label="Human face detector",
+            component=gr.Radio,
+            component_args={"choices": ["InsightFace", "MediaPipe"]},
+            section=section,
+        ).needs_reload_ui(),
+    )
+
+    shared.opts.add_option(
+        "live_portrait_flag_do_torch_compile",
+        shared.OptionInfo(
+            False,
+            "Enable torch.compile for faster inference",
+            section=section
+        ).needs_reload_ui(),
+    )
+
+
 script_callbacks.on_ui_tabs(on_ui_tabs)
+script_callbacks.on_ui_settings(on_ui_settings)

@@ -16,7 +16,6 @@ from rich.progress import track
 from .config.argument_config import ArgumentConfig
 from .config.inference_config import InferenceConfig
 from .config.crop_config import CropConfig
-from .utils.cropper import Cropper
 from .utils.camera import get_rotation_matrix
 from .utils.video import images2video, concat_frames, get_fps, add_audio_to_video, has_audio_stream
 from .utils.crop import prepare_paste_back, paste_back
@@ -36,7 +35,12 @@ class LivePortraitPipeline(object):
 
     def __init__(self, inference_cfg: InferenceConfig, crop_cfg: CropConfig):
         self.live_portrait_wrapper: LivePortraitWrapper = LivePortraitWrapper(inference_cfg=inference_cfg)
-        self.cropper: Cropper = Cropper(crop_cfg=crop_cfg)
+        if crop_cfg.model == 'mediapipe':
+            from .utils.cropper_mediapipe import Cropper
+            self.cropper: Cropper = Cropper(crop_cfg=crop_cfg)
+        else:
+            from .utils.cropper import Cropper
+            self.cropper: Cropper = Cropper(crop_cfg=crop_cfg)
 
     def make_motion_template(self, I_lst, c_eyes_lst, c_lip_lst, **kwargs):
         n_frames = I_lst.shape[0]

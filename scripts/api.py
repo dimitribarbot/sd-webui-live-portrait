@@ -8,7 +8,7 @@ from fastapi import FastAPI, Body
 from fastapi.exceptions import HTTPException
 import gradio as gr
 from pydantic import BaseModel
-from typing import Any, Literal
+from typing import Any, cast, Literal
 
 from modules.api.api import verify_url
 from modules.shared import opts
@@ -122,6 +122,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         source_division: int = 2 # make sure the height and width of source image or video can be divided by this number
 
         ########## driving crop arguments ##########
+        human_face_detector: Literal[None, 'insightface', 'mediapipe'] = None # face detector to use for human inference ('insightface' by default)
         scale_crop_driving_video: float = 2.2  # scale factor for cropping driving video
         vx_ratio_crop_driving_video: float = 0.  # adjust y offset
         vy_ratio_crop_driving_video: float = -0.1  # adjust x offset
@@ -155,9 +156,16 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
 
             argument_cfg.output_dir = temp_output_dir
 
+            default_crop_model = cast(
+                Literal['insightface', 'mediapipe'],
+                cast(str, opts.data.get("live_portrait_human_face_detector", 'insightface')).lower()
+            )
+
             live_portrait_pipeline = LivePortraitPipeline(
                 inference_cfg=InferenceConfig(),
-                crop_cfg=CropConfig()
+                crop_cfg=CropConfig(
+                    model=payload.human_face_detector if payload.human_face_detector else default_crop_model
+                )
             )
 
             wfp, wfp_concat = live_portrait_pipeline.execute(argument_cfg)

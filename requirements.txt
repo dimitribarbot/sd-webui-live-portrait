@@ -1,4 +1,5 @@
 imageio-ffmpeg>=0.5.1
+mediapipe
 numpy<=1.26.4
 onnx>=1.14.0
 opencv-python
