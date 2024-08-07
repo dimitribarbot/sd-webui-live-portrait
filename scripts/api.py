@@ -14,6 +14,8 @@ from typing import Any, Literal
 from modules.api.api import verify_url
 from modules.shared import opts
 
+from scripts.utils import is_valid_cuda_version, isMacOS
+
 from liveportrait.config.argument_config import ArgumentConfig
 from liveportrait.config.crop_config import CropConfig
 from liveportrait.config.inference_config import InferenceConfig
@@ -183,8 +185,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
     @app.post("/live-portrait/animal")
     async def execute_animal(payload: LivePortraitRequest = Body(...)) -> Any:
         print("Live Portrait API /live-portrait/animal received request")
-        if sys.platform.startswith('darwin'):
+        if isMacOS():
             raise OSError("XPose model, necessary to generate animal videos, is incompatible with MacOS systems.")
+        if not is_valid_cuda_version():
+            raise SystemError("XPose model, necessary to generate animal videos, is incompatible with pytorch version 2.1.x.")
         
         os.makedirs(temp_dir, exist_ok=True)
 

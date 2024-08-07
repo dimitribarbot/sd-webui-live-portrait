@@ -8,6 +8,8 @@ from packaging.version import parse
 from modules.modelloader import load_file_from_url
 import subprocess
 
+from scripts.utils import is_valid_cuda_version, isMacOS
+
 try:
     from modules.paths_internal import models_path
 except:
@@ -92,12 +94,12 @@ def install_onnxruntime():
         )
 
 
-def install_xpose():
+def install_xpose(can_install_xpose):
     """
     Install XPose.
     """
-    if sys.platform.startswith('darwin'):
-        # XPose is incompatible with MacOS
+    if not can_install_xpose or isMacOS():
+        # XPose is incompatible with MacOS or torch version 2.1.x
         return
     op_root = os.path.join(repo_root, "liveportrait", "utils", "dependencies", "XPose", "models", "UniPose", "ops")
     op_build = os.path.join(op_root, "build")
@@ -227,14 +229,16 @@ def download_liveportrait_animals_models():
     download_liveportrait_animals_retargeting_models()
 
 
-def download_model_weights():
+def download_model_weights(can_install_xpose):
     download_insightface_models()
     download_liveportrait_models()
-    if not sys.platform.startswith('darwin'):
+    if can_install_xpose and not isMacOS():
         download_liveportrait_animals_models()
 
 
+can_install_xpose = is_valid_cuda_version()
+
 install_requirements(main_req_file)
 install_onnxruntime()
-install_xpose()
-download_model_weights()
+install_xpose(can_install_xpose)
+download_model_weights(can_install_xpose)

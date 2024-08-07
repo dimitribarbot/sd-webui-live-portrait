@@ -8,6 +8,8 @@ import modules.scripts as scripts
 from modules import script_callbacks
 from modules.paths_internal import data_path
 
+from scripts.utils import is_valid_cuda_version, isMacOS
+
 from liveportrait.utils.helper import load_description
 from liveportrait.config.argument_config import ArgumentConfig
 from liveportrait.config.crop_config import CropConfig
@@ -475,8 +477,10 @@ def on_ui_tabs():
             )
             
         with gr.Tab("Animals"):
-            if sys.platform.startswith('darwin'):
+            if isMacOS():
                 gr.Markdown("Animal mode is not currently supported in MacOS.")
+            elif not is_valid_cuda_version():
+                gr.Markdown("Animal mode is not currently supported by pytorch version 2.1.x.")
             else:            
                 gr.HTML(load_description(title_md))
 
