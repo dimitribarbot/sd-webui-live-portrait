@@ -1,4 +1,5 @@
 numpy<=1.26.4
+onnx>=1.14.0
 opencv-python
 pykalman
 pyyaml
