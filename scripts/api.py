@@ -3,7 +3,6 @@ import datetime
 import os
 import requests
 import shutil
-import sys
 import tempfile
 from fastapi import FastAPI, Body
 from fastapi.exceptions import HTTPException
@@ -14,14 +13,14 @@ from typing import Any, Literal
 from modules.api.api import verify_url
 from modules.shared import opts
 
-from scripts.utils import is_valid_cuda_version, isMacOS
-
 from liveportrait.config.argument_config import ArgumentConfig
 from liveportrait.config.crop_config import CropConfig
 from liveportrait.config.inference_config import InferenceConfig
 from liveportrait.live_portrait_pipeline import LivePortraitPipeline
 from liveportrait.live_portrait_pipeline_animal import LivePortraitPipelineAnimal
 from liveportrait.config.base_config import make_abs_path
+
+from internal_liveportrait.utils import is_valid_cuda_version, isMacOS
 
 
 temp_dir = make_abs_path('../../tmp')

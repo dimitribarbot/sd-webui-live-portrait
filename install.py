@@ -8,7 +8,7 @@ from packaging.version import parse
 from modules.modelloader import load_file_from_url
 import subprocess
 
-from scripts.utils import is_valid_cuda_version, isMacOS
+from internal_liveportrait.utils import is_valid_cuda_version, isMacOS
 
 try:
     from modules.paths_internal import models_path

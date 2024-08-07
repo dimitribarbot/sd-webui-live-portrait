@@ -2,19 +2,18 @@ import datetime
 import gradio as gr
 import os.path as osp
 from pathlib import Path
-import sys
 
 import modules.scripts as scripts
 from modules import script_callbacks
 from modules.paths_internal import data_path
-
-from scripts.utils import is_valid_cuda_version, isMacOS
 
 from liveportrait.utils.helper import load_description
 from liveportrait.config.argument_config import ArgumentConfig
 from liveportrait.config.crop_config import CropConfig
 from liveportrait.config.inference_config import InferenceConfig
 from liveportrait.gradio_pipeline import GradioPipeline, GradioPipelineAnimal
+
+from internal_liveportrait.utils import is_valid_cuda_version, isMacOS
 
 
 repo_root = Path(__file__).parent.parent
