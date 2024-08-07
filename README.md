@@ -40,7 +40,7 @@ If necessary, it can be downloaded from: https://huggingface.co/KwaiVGI/LivePort
 ## API
 2 routes have been added to the Automatic1111 API:
 - `/live-portrait/human`: inference for humans.
-- `/live-portrait/animal` : inference for animals (not available for MacOS users).
+- `/live-portrait/animal`: inference for animals (not available for MacOS users).
 
 Parameters are the same as LivePortrait ones (see output of command `python inference.py --help` in LivePortrait repository) except for:
 - `source`: it can either be a path to an existing file (as in LivePortrait) or an url or a base64 encoded string. For url without file extension or base64 encoded string, the parameter `source_file_extension` must also be filled with a valid extension corresponding to the given source (e.g. `.jpg`).
