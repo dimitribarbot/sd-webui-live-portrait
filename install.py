@@ -10,14 +10,6 @@ import subprocess
 
 from internal_liveportrait.utils import is_valid_cuda_version, isMacOS
 
-try:
-    from modules.paths_internal import models_path
-except:
-    try:
-        from modules.paths import models_path
-    except:
-        models_path = os.path.abspath("models")
-
 
 repo_root = Path(__file__).parent
 main_req_file = repo_root / "requirements.txt"
