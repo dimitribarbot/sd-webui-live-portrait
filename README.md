@@ -71,8 +71,11 @@ For animal mode, this extension is using XPose which is also strictly for NON-CO
 If necessary, it can be downloaded from: https://huggingface.co/KwaiVGI/LivePortrait/resolve/main/liveportrait_animals/xpose.pth.
 
 ## API
-2 routes have been added to the Automatic1111 API:
+Routes have been added to the Automatic1111 API:
 - `/live-portrait/human`: inference for humans.
+- `/live-portrait/human/retargeting/image`: retargeting for human portraits.
+- `/live-portrait/human/retargeting/image/init`: get retargeting lip ratio and eye ratio of human portraits.
+- `/live-portrait/human/retargeting/video`: retargeting for human videos.
 - `/live-portrait/animal`: inference for animals (not available for MacOS users or for v2.1.x pytorch versions).
 
 Parameters are the same as LivePortrait ones (see output of command `python inference.py --help` in LivePortrait repository) except for:
@@ -85,13 +88,38 @@ Parameters are the same as LivePortrait ones (see output of command `python infe
 - `face_alignment_detector_device`: `cuda`, `cpu` or `mps`. Device to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `cuda`.
 - `face_alignment_detector_dtype`: `fp16`, `bf16` or `fp32`. Device type to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `fp16`.
 
-## Roadmap
+Additional parameters for the `/live-portrait/human/retargeting/image` endpoint are:
+- `eye_ratio` (default: 0): target eyes-open ratio (0 -> 0.8)
+- `lip_ratio` (default: 0): target lip-open ratio (0 -> 0.8)
+- `head_pitch_variation` (default: 0): relative pitch (-15 -> 15)
+- `head_yaw_variation` (default: 0): relative yaw (-25 -> 25)
+- `head_roll_variation` (default: 0): relative roll (-15 -> 15)
+- `mov_x` (default: 0): x-axis movement (-0.19 -> 0.19)
+- `mov_y` (default: 0): y-axis movement (-0.19 -> 0.19)
+- `mov_z` (default: 1): z-axis movement (0.9 -> 1.2)
+- `lip_variation_pouting` (default: 0): (-0.09 -> 0.09)
+- `lip_variation_pursing` (default: 0): (-20 -> 15)
+- `lip_variation_grin` (default: 0): (0 -> 15)
+- `lip_variation_opening` (default: 0): lip close <-> open (-90 -> 120)
+- `smile` (default: 0): (-0.3 -> 1.3)
+- `wink` (default: 0): (0 -> 39)
+- `eyebrow` (default: 0): (-30 -> 30)
+- `eyeball_direction_x` (default: 0): eye gaze (horizontal) (-30 -> 30)
+- `eyeball_direction_y` (default: 0): eye gaze (vertical) (-63 -> 63)
+- `retargeting_source_scale` (default: 2.5): the ratio of face area is smaller if scale is larger
+- `flag_stitching_retargeting_input` (default: true): To apply stitching or not
+- `flag_do_crop_input_retargeting_image` (default: true): whether to crop the source portrait to the face-cropping space
 
-- [x] Add tabs with LivePortrait interface
-- [x] Add inference API endpoints
-- [x] Option to use MediaPipe as face detector for humans
-- [x] Option to use FaceAlignment as face detector for humans
-- [ ] Add retargetting API endpoints
+Additional parameters for the `/live-portrait/human/retargeting/image/init` endpoint are:
+- `eye_ratio` (default: 0): target eyes-open ratio (0 -> 0.8)
+- `lip_ratio` (default: 0): target lip-open ratio (0 -> 0.8)
+- `retargeting_source_scale` (default: 2.5): the ratio of face area is smaller if scale is larger
+
+Additional parameters for the `/live-portrait/human/retargeting/video` endpoint are:
+- `lip_ratio` (default: 0): target lip-open ratio (0 -> 0.8)
+- `retargeting_source_scale` (default: 2.5): the ratio of face area is smaller if scale is larger
+- `driving_smooth_observation_variance_retargeting` (default: 3e-6): motion smooth strength
+- `flag_do_crop_input_retargeting_video` (default: true): whether to crop the source video to the face-cropping space
 
 ## Thanks
 Original author's link: https://liveportrait.github.io/

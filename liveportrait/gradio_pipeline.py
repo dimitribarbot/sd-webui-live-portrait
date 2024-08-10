@@ -42,6 +42,8 @@ class GradioPipeline(LivePortraitPipeline):
         super().__init__(inference_cfg, crop_cfg)
         # self.live_portrait_wrapper = self.live_portrait_wrapper
         self.args = args
+        self.source_eye_ratio: float | None = None
+        self.source_lip_ratio: float | None = None
 
     @torch.no_grad()
     def update_delta_new_eyeball_direction(self, eyeball_direction_x, eyeball_direction_y, delta_new, **kwargs):

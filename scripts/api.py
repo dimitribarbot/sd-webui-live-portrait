@@ -8,17 +8,20 @@ from fastapi import FastAPI, Body
 from fastapi.exceptions import HTTPException
 import gradio as gr
 from pydantic import BaseModel
-from typing import Any, cast, Literal
+from typing import Any, cast, Dict, Literal
+import cv2
 
+from liveportrait.gradio_pipeline import GradioPipeline
 from modules.api.api import verify_url
 from modules.shared import opts
 
 from liveportrait.config.argument_config import ArgumentConfig
+from liveportrait.config.base_config import make_abs_path
 from liveportrait.config.crop_config import CropConfig
 from liveportrait.config.inference_config import InferenceConfig
 from liveportrait.live_portrait_pipeline import LivePortraitPipeline
 from liveportrait.live_portrait_pipeline_animal import LivePortraitPipelineAnimal
-from liveportrait.config.base_config import make_abs_path
+from liveportrait.utils.helper import basename
 
 from internal_liveportrait.utils import download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, is_valid_cuda_version, isMacOS
 
@@ -30,17 +33,28 @@ def partial_fields(target_class, kwargs):
     return target_class(**{k: v for k, v in kwargs.items() if hasattr(target_class, k)})
 
 
-def fast_check_args(args: ArgumentConfig):
+def fast_check_inference_args(args: ArgumentConfig):
     if not args.source:
         raise ValueError("Source info is not optional")
     if not args.driving:
         raise ValueError("Driving info is not optional")
 
 
-def save_input_to_file(input, filename):
+def fast_check_retargeting_args(args: ArgumentConfig):
+    if not args.source:
+        raise ValueError("Source info is not optional")
+
+
+def save_input_to_temp_file(input: str, input_file_extension: str, tmpdirname: str):
+    input_extension = get_input_extension(input, input_file_extension)
+
+    temp_source_file = tempfile.NamedTemporaryFile(dir=tmpdirname, suffix=input_extension)
+    temp_source_file.close()
+    temp_source_file_name = temp_source_file.name
+
     if os.path.exists(input):
-        shutil.copyfile(input, filename)
-        return
+        shutil.copyfile(input, temp_source_file_name)
+        return temp_source_file_name
 
     if input.startswith("http://") or input.startswith("https://"):
         if not opts.api_enable_requests:
@@ -52,17 +66,18 @@ def save_input_to_file(input, filename):
         headers = {'user-agent': opts.api_useragent} if opts.api_useragent else {}
         try:
             with requests.get(input, timeout=30, headers=headers, stream=True) as r:
-                with open(filename, 'wb') as f:
+                with open(temp_source_file_name, 'wb') as f:
                     shutil.copyfileobj(r.raw, f)
-            return
+            return temp_source_file_name
         except Exception as e:
             raise HTTPException(status_code=500, detail="Invalid input url") from e
 
     if input.startswith(("data:image/", "data:video/")):
         input = input.split(";")[1].split(",")[1]
     try:
-        with open(filename, "wb") as f:
+        with open(temp_source_file_name, "wb") as f:
             f.write(base64.b64decode(input))
+        return temp_source_file_name
     except Exception as e:
         raise HTTPException(status_code=500, detail="Invalid encoded input") from e
     
@@ -82,6 +97,54 @@ def get_output_path(output_dir):
         return output_dir
     from modules.paths_internal import data_path
     return os.path.join(data_path, output_dir)
+
+
+def initialize_crop_model(
+        crop_cfg: CropConfig,
+        human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None,
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera',
+        face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda',
+        face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'):
+    
+    default_crop_model = cast(
+        Literal['insightface', 'mediapipe', 'facealignment'],
+        cast(str, opts.data.get("live_portrait_human_face_detector", 'insightface')).lower()
+    )
+
+    default_face_alignment_detector = cast(
+        Literal['blazeface', 'blazeface_back_camera', 'sfd'],
+        cast(str, opts.data.get("live_portrait_face_alignment_detector", 'blazeface_back_camera')).lower().replace(' ', '_')
+    )
+
+    crop_cfg.model = human_face_detector if human_face_detector else default_crop_model
+    crop_cfg.face_alignment_detector = face_alignment_detector if face_alignment_detector else default_face_alignment_detector
+    crop_cfg.face_alignment_detector_device = face_alignment_detector_device
+    crop_cfg.face_alignment_detector_dtype = face_alignment_detector_dtype
+    
+    return crop_cfg
+
+
+def rename_output_files(wfp: str, wfp_concat: str, temp_output_dir: str, new_names_to_old_names: Dict[str, str]):
+    new_name_wfp = os.path.basename(wfp)
+    new_name_wfp_concat = os.path.basename(wfp_concat)
+    for new_name, old_name in new_names_to_old_names.items():
+        new_name_wfp = new_name_wfp.replace(new_name, old_name)
+        new_name_wfp_concat = new_name_wfp_concat.replace(new_name, old_name)
+    if new_name_wfp != os.path.basename(wfp):
+        new_wfp = os.path.join(temp_output_dir, new_name_wfp)
+        os.rename(wfp, new_wfp)
+        wfp = new_wfp
+    if new_name_wfp_concat != os.path.basename(wfp_concat):
+        new_wfp_concat = os.path.join(temp_output_dir, new_name_wfp_concat)
+        os.rename(wfp_concat, new_wfp_concat)
+        wfp_concat = new_wfp_concat
+    return wfp, wfp_concat
+
+
+def save_files_output(output_dir: str, temp_output_dir: str):
+    ouput_path = get_output_path(output_dir)
+    timestamped_output_path = os.path.join(ouput_path, f"{datetime.date.today()}")
+    shutil.copytree(temp_output_dir, timestamped_output_path, dirs_exist_ok=True)
 
 
 def live_portrait_api(_: gr.Blocks, app: FastAPI):
@@ -122,10 +185,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         source_division: int = 2 # make sure the height and width of source image or video can be divided by this number
 
         ########## driving crop arguments ##########
-        human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
         scale_crop_driving_video: float = 2.2  # scale factor for cropping driving video
         vx_ratio_crop_driving_video: float = 0.  # adjust y offset
         vy_ratio_crop_driving_video: float = -0.1  # adjust x offset
+        human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
         face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
         face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
         face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
@@ -134,47 +197,35 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
     @app.post("/live-portrait/human")
     async def execute_human(payload: LivePortraitRequest = Body(...)) -> Any:
         print("Live Portrait API /live-portrait/human received request")
-        os.makedirs(temp_dir, exist_ok=True)
-
-        source_extension = get_input_extension(payload.source, payload.source_file_extension)
-        driving_extension = get_input_extension(payload.driving, payload.driving_file_extension)
 
         argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
         inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
         crop_cfg = partial_fields(CropConfig, payload.__dict__)
 
-        fast_check_args(argument_cfg)
+        fast_check_inference_args(argument_cfg)
 
+        os.makedirs(temp_dir, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temp_dir) as tmpdirname:
-            temp_output_dir  = os.path.join(tmpdirname, "output")
+            temp_output_dir = os.path.join(tmpdirname, "output")
             os.makedirs(temp_output_dir, exist_ok=True)
+            
+            argument_cfg.source = save_input_to_temp_file(payload.source, payload.source_file_extension, tmpdirname)
+            argument_cfg.driving = save_input_to_temp_file(payload.driving, payload.driving_file_extension, tmpdirname)
 
-            temp_source_file = tempfile.NamedTemporaryFile(dir=tmpdirname, suffix=source_extension)
-            temp_source_file.close()
-            save_input_to_file(argument_cfg.source, temp_source_file.name)
-            argument_cfg.source = temp_source_file.name
-
-            temp_driving_file = tempfile.NamedTemporaryFile(dir=tmpdirname, suffix=driving_extension)
-            temp_driving_file.close()
-            save_input_to_file(argument_cfg.driving, temp_driving_file.name)
-            argument_cfg.driving = temp_driving_file.name
+            new_names_to_old_names = {
+                basename(argument_cfg.source): basename(payload.source),
+                basename(argument_cfg.driving): basename(payload.driving)
+            }
 
             argument_cfg.output_dir = temp_output_dir
 
-            default_crop_model = cast(
-                Literal['insightface', 'mediapipe', 'facealignment'],
-                cast(str, opts.data.get("live_portrait_human_face_detector", 'insightface')).lower()
+            initialize_crop_model(
+                crop_cfg,
+                payload.human_face_detector,
+                payload.face_alignment_detector,
+                payload.face_alignment_detector_device,
+                payload.face_alignment_detector_dtype
             )
-
-            default_face_alignment_detector = cast(
-                Literal['blazeface', 'blazeface_back_camera', 'sfd'],
-                cast(str, opts.data.get("live_portrait_face_alignment_detector", 'blazeface_back_camera')).lower().replace(' ', '_')
-            )
-
-            crop_cfg.model = payload.human_face_detector if payload.human_face_detector else default_crop_model
-            crop_cfg.face_alignment_detector = payload.face_alignment_detector if payload.face_alignment_detector else default_face_alignment_detector
-            crop_cfg.face_alignment_detector_device = payload.face_alignment_detector_device
-            crop_cfg.face_alignment_detector_dtype = payload.face_alignment_detector_dtype
             
             download_liveportrait_models()
             if crop_cfg.model == "insightface":
@@ -186,11 +237,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             )
 
             wfp, wfp_concat = live_portrait_pipeline.execute(argument_cfg)
+            wfp, wfp_concat = rename_output_files(wfp, wfp_concat, temp_output_dir, new_names_to_old_names)
 
             if payload.save_output:
-                ouput_path = get_output_path(payload.output_dir)
-                timestamped_output_path = os.path.join(ouput_path, f"{datetime.date.today()}")
-                shutil.copytree(temp_output_dir, timestamped_output_path, dirs_exist_ok=True)
+                save_files_output(payload.output_dir, temp_output_dir)
 
             if payload.send_output:
                 with open(wfp, 'rb') as wfp_f:
@@ -206,6 +256,290 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             return {"animated_video": animated_video, "animated_video_with_concat": animated_video_with_concat }
 
 
+    class LivePortraitImageRetargetingRequest(BaseModel):
+        source: str = ""  # path to the source portrait or base64 encoded one
+        source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
+        output_dir: str = 'outputs/live-portrait/'  # directory to save output video
+        send_output: bool = True
+        save_output: bool = False
+
+        ########## retargeting arguments ##########
+        eye_ratio: float = 0  # target eyes-open ratio (0 -> 0.8)
+        lip_ratio: float = 0  # target lip-open ratio (0 -> 0.8)
+        head_pitch_variation: float = 0  # relative pitch (-15 -> 15)
+        head_yaw_variation: float = 0  # relative yaw (-25 -> 25)
+        head_roll_variation: float = 0  # relative roll (-15 -> 15)
+        mov_x: float = 0  # x-axis movement (-0.19 -> 0.19)
+        mov_y: float = 0  # y-axis movement (-0.19 -> 0.19)
+        mov_z: float = 1  # z-axis movement (0.9 -> 1.2)
+        lip_variation_pouting: float = 0  # (-0.09 -> 0.09)
+        lip_variation_pursing: float = 0  # (-20 -> 15)
+        lip_variation_grin: float = 0  # (0 -> 15)
+        lip_variation_opening: float = 0  # lip close <-> open (-90 -> 120)
+        smile: float = 0  # (-0.3 -> 1.3)
+        wink: float = 0  # (0 -> 39)
+        eyebrow: float = 0  # (-30 -> 30)
+        eyeball_direction_x: float = 0  # eye gaze (horizontal) (-30 -> 30)
+        eyeball_direction_y: float = 0  # eye gaze (vertical) (-63 -> 63)
+        retargeting_source_scale: float = 2.5  # the ratio of face area is smaller if scale is larger
+        flag_stitching_retargeting_input = True  # To apply stitching or not
+        flag_do_crop_input_retargeting_image: bool = True  # whether to crop the source portrait to the face-cropping space
+
+        ########## source crop arguments ##########
+        device_id: int = 0  # gpu device id
+        flag_force_cpu: bool = False  # force cpu inference, WIP!
+        det_thresh: float = 0.15 # detection threshold
+        vx_ratio: float = 0  # the ratio to move the face to left or right in cropping space
+        vy_ratio: float = -0.125  # the ratio to move the face to up or down in cropping space
+        flag_do_rot: bool = True  # whether to conduct the rotation when flag_do_crop is True
+        human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
+        face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
+        face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
+
+
+    @app.post("/live-portrait/human/retargeting/image")
+    async def execute_image_retargeting(payload: LivePortraitImageRetargetingRequest = Body(...)) -> Any:
+        print("Live Portrait API /live-portrait/human/retargeting/image received request")
+        
+        argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
+        inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
+        crop_cfg = partial_fields(CropConfig, payload.__dict__)
+
+        fast_check_retargeting_args(argument_cfg)
+
+        os.makedirs(temp_dir, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temp_dir) as tmpdirname:
+            temp_output_dir  = os.path.join(tmpdirname, "output")
+            os.makedirs(temp_output_dir, exist_ok=True)
+
+            argument_cfg.source = save_input_to_temp_file(payload.source, payload.source_file_extension, tmpdirname)
+
+            argument_cfg.output_dir = temp_output_dir
+
+            initialize_crop_model(
+                crop_cfg,
+                payload.human_face_detector,
+                payload.face_alignment_detector,
+                payload.face_alignment_detector_device,
+                payload.face_alignment_detector_dtype
+            )
+            
+            download_liveportrait_models()
+            if crop_cfg.model == "insightface":
+                download_insightface_models()
+
+            retargeting_pipeline = GradioPipeline(
+                inference_cfg=inference_cfg,
+                crop_cfg=crop_cfg,
+                args=argument_cfg
+            )
+
+            out, out_to_ori_blend = retargeting_pipeline.execute_image_retargeting(
+                payload.eye_ratio,
+                payload.lip_ratio,
+                payload.head_pitch_variation,
+                payload.head_yaw_variation,
+                payload.head_roll_variation,
+                payload.mov_x,
+                payload.mov_y,
+                payload.mov_z,
+                payload.lip_variation_pouting,
+                payload.lip_variation_pursing,
+                payload.lip_variation_grin,
+                payload.lip_variation_opening,
+                payload.smile,
+                payload.wink,
+                payload.eyebrow,
+                payload.eyeball_direction_x,
+                payload.eyeball_direction_y,
+                argument_cfg.source,
+                payload.retargeting_source_scale,
+                payload.flag_stitching_retargeting_input,
+                payload.flag_do_crop_input_retargeting_image
+            )
+
+            wfp_concat = os.path.join(temp_output_dir, f'{basename(payload.source)}_retargeting{payload.source_file_extension}')
+            wfp = os.path.join(temp_output_dir, f'{basename(payload.source)}_retargeting_cropped{payload.source_file_extension}')
+            cv2.imwrite(wfp_concat, cv2.cvtColor(out_to_ori_blend, cv2.COLOR_BGR2RGB))
+            cv2.imwrite(wfp, cv2.cvtColor(out, cv2.COLOR_BGR2RGB))
+
+            if payload.save_output:
+                save_files_output(payload.output_dir, temp_output_dir)
+
+            if payload.send_output:
+                with open(wfp, 'rb') as wfp_f:
+                    retargeting_image = (base64.b64encode(wfp_f.read())).decode()
+                with open(wfp_concat, 'rb') as wfp_concat_f:
+                    retargeting_image_cropped = (base64.b64encode(wfp_concat_f.read())).decode()
+            else:
+                retargeting_image = None
+                retargeting_image_cropped = None
+
+            print("Live Portrait API /live-portrait/human/retargeting/image finished")
+
+            return {"retargeting_image": retargeting_image, "retargeting_image_cropped": retargeting_image_cropped }
+
+
+    class LivePortraitImageRetargetingInitRequest(BaseModel):
+        source: str = ""  # path to the source portrait or base64 encoded one
+        source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
+
+        ########## retargeting arguments ##########
+        eye_ratio: float = 0  # target eyes-open ratio (0 -> 0.8)
+        lip_ratio: float = 0  # target lip-open ratio (0 -> 0.8)
+        retargeting_source_scale: float = 2.5  # the ratio of face area is smaller if scale is larger
+
+        ########## source crop arguments ##########
+        device_id: int = 0  # gpu device id
+        flag_force_cpu: bool = False  # force cpu inference, WIP!
+        det_thresh: float = 0.15 # detection threshold
+        vx_ratio: float = 0  # the ratio to move the face to left or right in cropping space
+        vy_ratio: float = -0.125  # the ratio to move the face to up or down in cropping space
+        flag_do_rot: bool = True  # whether to conduct the rotation when flag_do_crop is True
+        human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
+        face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
+        face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
+        
+
+    @app.post("/live-portrait/human/retargeting/image/init")
+    async def init_image_retargeting(payload: LivePortraitImageRetargetingInitRequest = Body(...)) -> Any:
+        print("Live Portrait API /live-portrait/human/retargeting/image/init received request")
+        
+        argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
+        inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
+        crop_cfg = partial_fields(CropConfig, payload.__dict__)
+
+        fast_check_retargeting_args(argument_cfg)
+
+        os.makedirs(temp_dir, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temp_dir) as tmpdirname:
+            argument_cfg.source = save_input_to_temp_file(payload.source, payload.source_file_extension, tmpdirname)
+
+            initialize_crop_model(
+                crop_cfg,
+                payload.human_face_detector,
+                payload.face_alignment_detector,
+                payload.face_alignment_detector_device,
+                payload.face_alignment_detector_dtype
+            )
+            
+            download_liveportrait_models()
+            if crop_cfg.model == "insightface":
+                download_insightface_models()
+
+            retargeting_pipeline = GradioPipeline(
+                inference_cfg=inference_cfg,
+                crop_cfg=crop_cfg,
+                args=argument_cfg
+            )
+
+            source_eye_ratio, source_lip_ratio = retargeting_pipeline.init_retargeting_image(
+                payload.retargeting_source_scale,
+                payload.eye_ratio,
+                payload.lip_ratio,
+                argument_cfg.source
+            )
+
+            print("Live Portrait API /live-portrait/human/retargeting/image/init finished")
+
+            return {"source_eye_ratio": source_eye_ratio, "source_lip_ratio": source_lip_ratio }
+
+    
+    class LivePortraitVideoRetargetingRequest(BaseModel):
+        source: str = ""  # path to the source video or base64 encoded one
+        source_file_extension: str = ".mp4"  # source file extension if source is a base64 encoded string or url
+        output_dir: str = 'outputs/live-portrait/'  # directory to save output video
+        send_output: bool = True
+        save_output: bool = False
+
+        ########## retargeting arguments ##########
+        lip_ratio: float = 0  # target lip-open ratio (0 -> 0.8)
+        retargeting_source_scale: float = 2.3  # the ratio of face area is smaller if scale is larger
+        driving_smooth_observation_variance_retargeting: float = 3e-6  # motion smooth strength
+        flag_do_crop_input_retargeting_video: bool = True  # whether to crop the source video to the face-cropping space
+
+        ########## source crop arguments ##########
+        device_id: int = 0  # gpu device id
+        flag_force_cpu: bool = False  # force cpu inference, WIP!
+        det_thresh: float = 0.15 # detection threshold
+        vx_ratio: float = 0  # the ratio to move the face to left or right in cropping space
+        vy_ratio: float = -0.125  # the ratio to move the face to up or down in cropping space
+        flag_do_rot: bool = True  # whether to conduct the rotation when flag_do_crop is True
+        human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
+        face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
+        face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
+
+
+    @app.post("/live-portrait/human/retargeting/video")
+    async def execute_video_retargeting(payload: LivePortraitVideoRetargetingRequest = Body(...)) -> Any:
+        print("Live Portrait API /live-portrait/human/retargeting/video received request")
+        
+        argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
+        inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
+        crop_cfg = partial_fields(CropConfig, payload.__dict__)
+
+        fast_check_retargeting_args(argument_cfg)
+
+        os.makedirs(temp_dir, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temp_dir) as tmpdirname:
+            temp_output_dir  = os.path.join(tmpdirname, "output")
+            os.makedirs(temp_output_dir, exist_ok=True)
+
+            argument_cfg.source = save_input_to_temp_file(payload.source, payload.source_file_extension, tmpdirname)
+
+            new_names_to_old_names = {
+                basename(argument_cfg.source): basename(payload.source)
+            }
+
+            argument_cfg.output_dir = temp_output_dir
+
+            initialize_crop_model(
+                crop_cfg,
+                payload.human_face_detector,
+                payload.face_alignment_detector,
+                payload.face_alignment_detector_device,
+                payload.face_alignment_detector_dtype
+            )
+            
+            download_liveportrait_models()
+            if crop_cfg.model == "insightface":
+                download_insightface_models()
+
+            retargeting_pipeline = GradioPipeline(
+                inference_cfg=inference_cfg,
+                crop_cfg=crop_cfg,
+                args=argument_cfg
+            )
+
+            wfp_concat, wfp = retargeting_pipeline.execute_video_retargeting(
+                payload.lip_ratio,
+                argument_cfg.source,
+                payload.retargeting_source_scale,
+                payload.driving_smooth_observation_variance_retargeting,
+                payload.flag_do_crop_input_retargeting_video
+            )
+            wfp, wfp_concat = rename_output_files(wfp, wfp_concat, temp_output_dir, new_names_to_old_names)
+
+            if payload.save_output:
+                save_files_output(payload.output_dir, temp_output_dir)
+
+            if payload.send_output:
+                with open(wfp, 'rb') as wfp_f:
+                    retargeting_video = (base64.b64encode(wfp_f.read())).decode()
+                with open(wfp_concat, 'rb') as wfp_concat_f:
+                    retargeting_video_with_concat = (base64.b64encode(wfp_concat_f.read())).decode()
+            else:
+                retargeting_video = None
+                retargeting_video_with_concat = None
+
+            print("Live Portrait API /live-portrait/human/retargeting/video finished")
+
+            return {"retargeting_video": retargeting_video, "retargeting_video_with_concat": retargeting_video_with_concat }
+        
+        
     @app.post("/live-portrait/animal")
     async def execute_animal(payload: LivePortraitRequest = Body(...)) -> Any:
         print("Live Portrait API /live-portrait/animal received request")
@@ -214,30 +548,24 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         if not is_valid_cuda_version():
             raise SystemError("XPose model, necessary to generate animal videos, is incompatible with pytorch version 2.1.x.")
         
-        os.makedirs(temp_dir, exist_ok=True)
-
-        source_extension = get_input_extension(payload.source, payload.source_file_extension)
-        driving_extension = get_input_extension(payload.driving, payload.driving_file_extension)
-
         argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
         inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
         crop_cfg = partial_fields(CropConfig, payload.__dict__)
 
-        fast_check_args(argument_cfg)
+        fast_check_inference_args(argument_cfg)
 
+        os.makedirs(temp_dir, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temp_dir) as tmpdirname:
             temp_output_dir  = os.path.join(tmpdirname, "output")
             os.makedirs(temp_output_dir, exist_ok=True)
 
-            temp_source_file = tempfile.NamedTemporaryFile(dir=tmpdirname, suffix=source_extension)
-            temp_source_file.close()
-            save_input_to_file(argument_cfg.source, temp_source_file.name)
-            argument_cfg.source = temp_source_file.name
+            argument_cfg.source = save_input_to_temp_file(payload.source, payload.source_file_extension, tmpdirname)
+            argument_cfg.driving = save_input_to_temp_file(payload.driving, payload.driving_file_extension, tmpdirname)
 
-            temp_driving_file = tempfile.NamedTemporaryFile(dir=tmpdirname, suffix=driving_extension)
-            temp_driving_file.close()
-            save_input_to_file(argument_cfg.driving, temp_driving_file.name)
-            argument_cfg.driving = temp_driving_file.name
+            new_names_to_old_names = {
+                basename(argument_cfg.source): basename(payload.source),
+                basename(argument_cfg.driving): basename(payload.driving)
+            }
 
             argument_cfg.output_dir = temp_output_dir
 
@@ -249,11 +577,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             )
 
             wfp, wfp_concat, wfp_gif = live_portrait_pipeline_animal.execute(argument_cfg)
+            wfp, wfp_concat = rename_output_files(wfp, wfp_concat, temp_output_dir, new_names_to_old_names)
 
             if payload.save_output:
-                ouput_path = get_output_path(payload.output_dir)
-                timestamped_output_path = os.path.join(ouput_path, f"{datetime.date.today()}")
-                shutil.copytree(temp_output_dir, timestamped_output_path, dirs_exist_ok=True)
+                save_files_output(payload.output_dir, temp_output_dir)
 
             if payload.send_output:
                 with open(wfp, 'rb') as wfp_f:
@@ -270,7 +597,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             print("Live Portrait API /live-portrait/animal finished")
 
             return {"animated_video": animated_video, "animated_video_with_concat": animated_video_with_concat, "animated_gif": animated_gif }
-
+        
 
 try:
     import modules.script_callbacks as script_callbacks
