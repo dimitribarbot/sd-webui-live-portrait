@@ -13,6 +13,7 @@ import cv2
 
 from liveportrait.gradio_pipeline import GradioPipeline
 from modules.api.api import verify_url
+from modules.devices import torch_gc
 from modules.shared import opts
 
 from liveportrait.config.argument_config import ArgumentConfig
@@ -27,6 +28,87 @@ from internal_liveportrait.utils import download_insightface_models, download_li
 
 
 temp_dir = make_abs_path('../../tmp')
+
+live_portrait_pipeline: LivePortraitPipeline | None = None
+live_portrait_pipeline_animal: LivePortraitPipelineAnimal | None = None
+retargeting_pipeline: GradioPipeline | None = None
+
+def clear_model_cache():
+    global live_portrait_pipeline, live_portrait_pipeline_animal, retargeting_pipeline
+    live_portrait_pipeline = None
+    live_portrait_pipeline_animal = None
+    retargeting_pipeline = None
+    torch_gc()
+
+def init_live_portrait_pipeline(inference_cfg: InferenceConfig, crop_cfg: CropConfig, use_model_cache: bool):
+    global live_portrait_pipeline, live_portrait_pipeline_animal, retargeting_pipeline
+    if not use_model_cache:
+        clear_model_cache()
+        return LivePortraitPipeline(
+            inference_cfg=inference_cfg,
+            crop_cfg=crop_cfg
+        )
+    if not live_portrait_pipeline or live_portrait_pipeline.cropper.crop_cfg.model != crop_cfg.model or \
+        (crop_cfg.model == "facealignment" and (live_portrait_pipeline.cropper.crop_cfg.face_alignment_detector != crop_cfg.face_alignment_detector \
+                                                or live_portrait_pipeline.cropper.crop_cfg.face_alignment_detector_device != crop_cfg.face_alignment_detector_device
+                                                or live_portrait_pipeline.cropper.crop_cfg.face_alignment_detector_dtype != crop_cfg.face_alignment_detector_dtype)):
+        clear_model_cache()
+        live_portrait_pipeline = LivePortraitPipeline(
+            inference_cfg=inference_cfg,
+            crop_cfg=crop_cfg
+        )
+    else:
+        live_portrait_pipeline.cropper.update_config(crop_cfg.__dict__)
+        live_portrait_pipeline.live_portrait_wrapper.update_config(inference_cfg.__dict__)
+    return live_portrait_pipeline
+
+
+def init_live_portrait_animal_pipeline(inference_cfg: InferenceConfig, crop_cfg: CropConfig, use_model_cache: bool):
+    global live_portrait_pipeline, live_portrait_pipeline_animal, retargeting_pipeline
+    if not use_model_cache:
+        clear_model_cache()
+        return LivePortraitPipelineAnimal(
+            inference_cfg=inference_cfg,
+            crop_cfg=crop_cfg
+        )
+    if not live_portrait_pipeline_animal or live_portrait_pipeline_animal.cropper.crop_cfg.model != crop_cfg.model or \
+        (crop_cfg.model == "facealignment" and (live_portrait_pipeline_animal.cropper.crop_cfg.face_alignment_detector != crop_cfg.face_alignment_detector \
+                                                or live_portrait_pipeline_animal.cropper.crop_cfg.face_alignment_detector_device != crop_cfg.face_alignment_detector_device
+                                                or live_portrait_pipeline_animal.cropper.crop_cfg.face_alignment_detector_dtype != crop_cfg.face_alignment_detector_dtype)):
+        clear_model_cache()
+        live_portrait_pipeline_animal = LivePortraitPipelineAnimal(
+            inference_cfg=inference_cfg,
+            crop_cfg=crop_cfg
+        )
+    else:
+        live_portrait_pipeline_animal.cropper.update_config(crop_cfg.__dict__)
+        live_portrait_pipeline_animal.live_portrait_wrapper_animal.update_config(inference_cfg.__dict__)
+    return live_portrait_pipeline_animal
+
+
+def init_retargeting_pipeline(inference_cfg: InferenceConfig, crop_cfg: CropConfig, argument_cfg: ArgumentConfig, use_model_cache: bool):
+    global live_portrait_pipeline, live_portrait_pipeline_animal, retargeting_pipeline
+    if not use_model_cache:
+        clear_model_cache()
+        return GradioPipeline(
+            inference_cfg=inference_cfg,
+            crop_cfg=crop_cfg,
+            args=argument_cfg
+        )
+    if not retargeting_pipeline or retargeting_pipeline.cropper.crop_cfg.model != crop_cfg.model or \
+        (crop_cfg.model == "facealignment" and (retargeting_pipeline.cropper.crop_cfg.face_alignment_detector != crop_cfg.face_alignment_detector \
+                                                or retargeting_pipeline.cropper.crop_cfg.face_alignment_detector_device != crop_cfg.face_alignment_detector_device
+                                                or retargeting_pipeline.cropper.crop_cfg.face_alignment_detector_dtype != crop_cfg.face_alignment_detector_dtype)):
+        clear_model_cache()
+        retargeting_pipeline = GradioPipeline(
+            inference_cfg=inference_cfg,
+            crop_cfg=crop_cfg,
+            args=argument_cfg
+        )
+    else:
+        retargeting_pipeline.cropper.update_config(crop_cfg.__dict__)
+        retargeting_pipeline.live_portrait_wrapper.update_config(inference_cfg.__dict__)
+    return retargeting_pipeline
 
 
 def partial_fields(target_class, kwargs):
@@ -156,6 +238,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         output_dir: str = 'outputs/live-portrait/'  # directory to save output video
         send_output: bool = True
         save_output: bool = False
+        use_model_cache: bool = True
 
         ########## inference arguments ##########
         flag_use_half_precision: bool = True  # whether to use half precision (FP16). If black boxes appear, it might be due to GPU incompatibility; set to False.
@@ -231,9 +314,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             if crop_cfg.model == "insightface":
                 download_insightface_models()
 
-            live_portrait_pipeline = LivePortraitPipeline(
-                inference_cfg=inference_cfg,
-                crop_cfg=crop_cfg
+            live_portrait_pipeline = init_live_portrait_pipeline(
+                inference_cfg,
+                crop_cfg,
+                payload.use_model_cache
             )
 
             wfp, wfp_concat = live_portrait_pipeline.execute(argument_cfg)
@@ -262,6 +346,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         output_dir: str = 'outputs/live-portrait/'  # directory to save output video
         send_output: bool = True
         save_output: bool = False
+        use_model_cache: bool = True
 
         ########## retargeting arguments ##########
         eye_ratio: float = 0  # target eyes-open ratio (0 -> 0.8)
@@ -329,10 +414,11 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             if crop_cfg.model == "insightface":
                 download_insightface_models()
 
-            retargeting_pipeline = GradioPipeline(
-                inference_cfg=inference_cfg,
-                crop_cfg=crop_cfg,
-                args=argument_cfg
+            retargeting_pipeline = init_retargeting_pipeline(
+                inference_cfg,
+                crop_cfg,
+                argument_cfg,
+                payload.use_model_cache
             )
 
             out, out_to_ori_blend = retargeting_pipeline.execute_image_retargeting(
@@ -384,6 +470,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
     class LivePortraitImageRetargetingInitRequest(BaseModel):
         source: str = ""  # path to the source portrait or base64 encoded one
         source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
+        use_model_cache: bool = True
 
         ########## retargeting arguments ##########
         eye_ratio: float = 0  # target eyes-open ratio (0 -> 0.8)
@@ -429,10 +516,11 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             if crop_cfg.model == "insightface":
                 download_insightface_models()
 
-            retargeting_pipeline = GradioPipeline(
-                inference_cfg=inference_cfg,
-                crop_cfg=crop_cfg,
-                args=argument_cfg
+            retargeting_pipeline = init_retargeting_pipeline(
+                inference_cfg,
+                crop_cfg,
+                argument_cfg,
+                payload.use_model_cache
             )
 
             source_eye_ratio, source_lip_ratio = retargeting_pipeline.init_retargeting_image(
@@ -453,6 +541,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         output_dir: str = 'outputs/live-portrait/'  # directory to save output video
         send_output: bool = True
         save_output: bool = False
+        use_model_cache: bool = True
 
         ########## retargeting arguments ##########
         lip_ratio: float = 0  # target lip-open ratio (0 -> 0.8)
@@ -508,10 +597,11 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             if crop_cfg.model == "insightface":
                 download_insightface_models()
 
-            retargeting_pipeline = GradioPipeline(
-                inference_cfg=inference_cfg,
-                crop_cfg=crop_cfg,
-                args=argument_cfg
+            retargeting_pipeline = init_retargeting_pipeline(
+                inference_cfg,
+                crop_cfg,
+                argument_cfg,
+                payload.use_model_cache
             )
 
             wfp_concat, wfp = retargeting_pipeline.execute_video_retargeting(
@@ -571,9 +661,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
 
             download_liveportrait_animals_models()
 
-            live_portrait_pipeline_animal = LivePortraitPipelineAnimal(
-                inference_cfg=inference_cfg,
-                crop_cfg=crop_cfg
+            live_portrait_pipeline_animal = init_live_portrait_animal_pipeline(
+                inference_cfg,
+                crop_cfg,
+                payload.use_model_cache
             )
 
             wfp, wfp_concat, wfp_gif = live_portrait_pipeline_animal.execute(argument_cfg)

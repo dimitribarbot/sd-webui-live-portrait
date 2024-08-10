@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import cast, Literal
 
 import modules.scripts as scripts
-from modules import script_callbacks, shared
+from modules import devices, script_callbacks, shared
 from modules.paths_internal import data_path
 
 from liveportrait.utils.helper import load_description
@@ -43,6 +43,8 @@ def on_ui_tabs():
         if not gradio_pipeline:
             output_dir = osp.join(data_path, "outputs", "live-portrait", f"{datetime.date.today()}")
             gradio_pipeline_animal = None
+
+            devices.torch_gc()
             
             crop_model = cast(
                 Literal['insightface', 'mediapipe', 'facealignment'],
@@ -82,6 +84,8 @@ def on_ui_tabs():
         if not gradio_pipeline_animal:
             output_dir = osp.join(data_path, "outputs", "live-portrait", f"{datetime.date.today()}")
             gradio_pipeline = None
+
+            devices.torch_gc()
 
             flag_do_torch_compile = cast(
                 bool,

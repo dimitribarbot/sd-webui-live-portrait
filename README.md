@@ -83,43 +83,44 @@ Parameters are the same as LivePortrait ones (see output of command `python infe
 - `driving`: it can either be a path to an existing file (as in LivePortrait) or an url or a base64 encoded string. For url without file extension or base64 encoded string, the parameter `driving_file_extension` must also be filled with a valid extension corresponding to the given driving video (e.g. `.mp4`).
 - `send_output`: `true` if you want output videos to be sent as base64 encoded strings, `false` otherwise.
 - `save_output`: `true` if you want output videos to be saved in `output_dir` (as in LivePortrait), `false` otherwise.
+- `use_model_cache`: `true` if you want live portrait and face detector models to be cached for subsequent calls using same models, `false` otherwise.
 - `human_face_detector`: `insightface`, `mediapipe` or `facealignment`. Face detector to be used by human inference. Default to the `Human face detector` UI setting if defined or `insightface` if not set neither in settings nor in endpoint body.
 - `face_alignment_detector`: `blazeface`, `blazeface_back_camera` or `sfd`. Face detector to be used by human inference when Face Alignment is selected as `human_face_detector`. Default to the `Face alignment detector` UI setting if defined or `blazeface_back_camera` if not set neither in settings nor in endpoint body.
 - `face_alignment_detector_device`: `cuda`, `cpu` or `mps`. Device to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `cuda`.
 - `face_alignment_detector_dtype`: `fp16`, `bf16` or `fp32`. Device type to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `fp16`.
 
 Additional parameters for the `/live-portrait/human/retargeting/image` endpoint are:
-- `eye_ratio` (default: 0): target eyes-open ratio (0 -> 0.8)
-- `lip_ratio` (default: 0): target lip-open ratio (0 -> 0.8)
-- `head_pitch_variation` (default: 0): relative pitch (-15 -> 15)
-- `head_yaw_variation` (default: 0): relative yaw (-25 -> 25)
-- `head_roll_variation` (default: 0): relative roll (-15 -> 15)
-- `mov_x` (default: 0): x-axis movement (-0.19 -> 0.19)
-- `mov_y` (default: 0): y-axis movement (-0.19 -> 0.19)
-- `mov_z` (default: 1): z-axis movement (0.9 -> 1.2)
-- `lip_variation_pouting` (default: 0): (-0.09 -> 0.09)
-- `lip_variation_pursing` (default: 0): (-20 -> 15)
-- `lip_variation_grin` (default: 0): (0 -> 15)
-- `lip_variation_opening` (default: 0): lip close <-> open (-90 -> 120)
-- `smile` (default: 0): (-0.3 -> 1.3)
-- `wink` (default: 0): (0 -> 39)
-- `eyebrow` (default: 0): (-30 -> 30)
-- `eyeball_direction_x` (default: 0): eye gaze (horizontal) (-30 -> 30)
-- `eyeball_direction_y` (default: 0): eye gaze (vertical) (-63 -> 63)
-- `retargeting_source_scale` (default: 2.5): the ratio of face area is smaller if scale is larger
-- `flag_stitching_retargeting_input` (default: true): To apply stitching or not
-- `flag_do_crop_input_retargeting_image` (default: true): whether to crop the source portrait to the face-cropping space
+- `eye_ratio`: target eyes-open ratio (0 -> 0.8)
+- `lip_ratio`: target lip-open ratio (0 -> 0.8)
+- `head_pitch_variation`: relative pitch (-15 -> 15)
+- `head_yaw_variation`: relative yaw (-25 -> 25)
+- `head_roll_variation`: relative roll (-15 -> 15)
+- `mov_x`: x-axis movement (-0.19 -> 0.19)
+- `mov_y`: y-axis movement (-0.19 -> 0.19)
+- `mov_z`: z-axis movement (0.9 -> 1.2)
+- `lip_variation_pouting`: pouting (-0.09 -> 0.09)
+- `lip_variation_pursing`: pursing 😐 (-20 -> 15)
+- `lip_variation_grin`: grin 😁 (0 -> 15)
+- `lip_variation_opening`: lip close <-> open (-90 -> 120)
+- `smile`: smile 😄 (-0.3 -> 1.3)
+- `wink`: wink 😉 (0 -> 39)
+- `eyebrow`: eyebrow 🤨 (-30 -> 30)
+- `eyeball_direction_x`: eye gaze (horizontal) 👀 (-30 -> 30)
+- `eyeball_direction_y`: eye gaze (vertical) 🙄 (-63 -> 63)
+- `retargeting_source_scale`: the ratio of face area is smaller if scale is larger
+- `flag_stitching_retargeting_input`: To apply stitching or not
+- `flag_do_crop_input_retargeting_image`: whether to crop the source portrait to the face-cropping space
 
 Additional parameters for the `/live-portrait/human/retargeting/image/init` endpoint are:
-- `eye_ratio` (default: 0): target eyes-open ratio (0 -> 0.8)
-- `lip_ratio` (default: 0): target lip-open ratio (0 -> 0.8)
-- `retargeting_source_scale` (default: 2.5): the ratio of face area is smaller if scale is larger
+- `eye_ratio`: target eyes-open ratio (0 -> 0.8)
+- `lip_ratio`: target lip-open ratio (0 -> 0.8)
+- `retargeting_source_scale`: the ratio of face area is smaller if scale is larger
 
 Additional parameters for the `/live-portrait/human/retargeting/video` endpoint are:
-- `lip_ratio` (default: 0): target lip-open ratio (0 -> 0.8)
-- `retargeting_source_scale` (default: 2.5): the ratio of face area is smaller if scale is larger
-- `driving_smooth_observation_variance_retargeting` (default: 3e-6): motion smooth strength
-- `flag_do_crop_input_retargeting_video` (default: true): whether to crop the source video to the face-cropping space
+- `lip_ratio`: target lip-open ratio (0 -> 0.8)
+- `retargeting_source_scale`: the ratio of face area is smaller if scale is larger
+- `driving_smooth_observation_variance_retargeting`: motion smooth strength
+- `flag_do_crop_input_retargeting_video`: whether to crop the source video to the face-cropping space
 
 ## Thanks
 Original author's link: https://liveportrait.github.io/
