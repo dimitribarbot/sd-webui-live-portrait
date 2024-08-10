@@ -8,7 +8,7 @@ from fastapi import FastAPI, Body
 from fastapi.exceptions import HTTPException
 import gradio as gr
 from pydantic import BaseModel
-from typing import Any, cast, Dict, Literal
+from typing import Any, cast, Dict, List, Literal
 import cv2
 
 from liveportrait.gradio_pipeline import GradioPipeline
@@ -338,17 +338,9 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             print("Live Portrait API /live-portrait/human finished")
 
             return {"animated_video": animated_video, "animated_video_with_concat": animated_video_with_concat }
+        
 
-
-    class LivePortraitImageRetargetingRequest(BaseModel):
-        source: str = ""  # path to the source portrait or base64 encoded one
-        source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
-        output_dir: str = 'outputs/live-portrait/'  # directory to save output video
-        send_output: bool = True
-        save_output: bool = False
-        use_model_cache: bool = True
-
-        ########## retargeting arguments ##########
+    class LivePortraitImageRetargetingOptions(BaseModel):  
         eye_ratio: float = 0  # target eyes-open ratio (0 -> 0.8)
         lip_ratio: float = 0  # target lip-open ratio (0 -> 0.8)
         head_pitch_variation: float = 0  # relative pitch (-15 -> 15)
@@ -366,6 +358,20 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         eyebrow: float = 0  # (-30 -> 30)
         eyeball_direction_x: float = 0  # eye gaze (horizontal) (-30 -> 30)
         eyeball_direction_y: float = 0  # eye gaze (vertical) (-63 -> 63)
+
+
+    class LivePortraitImageRetargetingRequest(BaseModel):
+        source: str = ""  # path to the source portrait or base64 encoded one
+        source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
+        output_dir: str = 'outputs/live-portrait/'  # directory to save output video
+        send_output: bool = True
+        save_output: bool = False
+        use_model_cache: bool = True
+
+        ########## retargeting arguments ##########
+        retargeting_options: List[LivePortraitImageRetargetingOptions] = [
+            LivePortraitImageRetargetingOptions()
+        ]
         retargeting_source_scale: float = 2.5  # the ratio of face area is smaller if scale is larger
         flag_stitching_retargeting_input = True  # To apply stitching or not
         flag_do_crop_input_retargeting_image: bool = True  # whether to crop the source portrait to the face-cropping space
@@ -421,50 +427,55 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
                 payload.use_model_cache
             )
 
-            out, out_to_ori_blend = retargeting_pipeline.execute_image_retargeting(
-                payload.eye_ratio,
-                payload.lip_ratio,
-                payload.head_pitch_variation,
-                payload.head_yaw_variation,
-                payload.head_roll_variation,
-                payload.mov_x,
-                payload.mov_y,
-                payload.mov_z,
-                payload.lip_variation_pouting,
-                payload.lip_variation_pursing,
-                payload.lip_variation_grin,
-                payload.lip_variation_opening,
-                payload.smile,
-                payload.wink,
-                payload.eyebrow,
-                payload.eyeball_direction_x,
-                payload.eyeball_direction_y,
-                argument_cfg.source,
-                payload.retargeting_source_scale,
-                payload.flag_stitching_retargeting_input,
-                payload.flag_do_crop_input_retargeting_image
-            )
+            retargeting_images = []
+            retargeting_images_cropped = []
+            for option_index in range(len(payload.retargeting_options)):
+                retargeting_option = payload.retargeting_options[option_index]
+                out, out_to_ori_blend = retargeting_pipeline.execute_image_retargeting(
+                    retargeting_option.eye_ratio,
+                    retargeting_option.lip_ratio,
+                    retargeting_option.head_pitch_variation,
+                    retargeting_option.head_yaw_variation,
+                    retargeting_option.head_roll_variation,
+                    retargeting_option.mov_x,
+                    retargeting_option.mov_y,
+                    retargeting_option.mov_z,
+                    retargeting_option.lip_variation_pouting,
+                    retargeting_option.lip_variation_pursing,
+                    retargeting_option.lip_variation_grin,
+                    retargeting_option.lip_variation_opening,
+                    retargeting_option.smile,
+                    retargeting_option.wink,
+                    retargeting_option.eyebrow,
+                    retargeting_option.eyeball_direction_x,
+                    retargeting_option.eyeball_direction_y,
+                    argument_cfg.source,
+                    payload.retargeting_source_scale,
+                    payload.flag_stitching_retargeting_input,
+                    payload.flag_do_crop_input_retargeting_image
+                )
 
-            wfp_concat = os.path.join(temp_output_dir, f'{basename(payload.source)}_retargeting{payload.source_file_extension}')
-            wfp = os.path.join(temp_output_dir, f'{basename(payload.source)}_retargeting_cropped{payload.source_file_extension}')
-            cv2.imwrite(wfp_concat, cv2.cvtColor(out_to_ori_blend, cv2.COLOR_BGR2RGB))
-            cv2.imwrite(wfp, cv2.cvtColor(out, cv2.COLOR_BGR2RGB))
+                suffix = "" if len(payload.retargeting_options) == 1 else f"_{option_index}"
+
+                wfp = os.path.join(temp_output_dir, f'{basename(payload.source)}_retargeting{suffix}{payload.source_file_extension}')
+                wfp_concat = os.path.join(temp_output_dir, f'{basename(payload.source)}_retargeting_cropped{suffix}{payload.source_file_extension}')
+                cv2.imwrite(wfp, cv2.cvtColor(out_to_ori_blend, cv2.COLOR_BGR2RGB))
+                cv2.imwrite(wfp_concat, cv2.cvtColor(out, cv2.COLOR_BGR2RGB))
+
+                if payload.send_output:
+                    with open(wfp, 'rb') as wfp_f:
+                        retargeting_image = (base64.b64encode(wfp_f.read())).decode()
+                    with open(wfp_concat, 'rb') as wfp_concat_f:
+                        retargeting_image_cropped = (base64.b64encode(wfp_concat_f.read())).decode()
+                    retargeting_images.append(retargeting_image)
+                    retargeting_images_cropped.append(retargeting_image_cropped)
 
             if payload.save_output:
                 save_files_output(payload.output_dir, temp_output_dir)
 
-            if payload.send_output:
-                with open(wfp, 'rb') as wfp_f:
-                    retargeting_image = (base64.b64encode(wfp_f.read())).decode()
-                with open(wfp_concat, 'rb') as wfp_concat_f:
-                    retargeting_image_cropped = (base64.b64encode(wfp_concat_f.read())).decode()
-            else:
-                retargeting_image = None
-                retargeting_image_cropped = None
-
             print("Live Portrait API /live-portrait/human/retargeting/image finished")
 
-            return {"retargeting_image": retargeting_image, "retargeting_image_cropped": retargeting_image_cropped }
+            return {"retargeting_images": retargeting_images, "retargeting_images_cropped": retargeting_images_cropped }
 
 
     class LivePortraitImageRetargetingInitRequest(BaseModel):

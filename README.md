@@ -73,7 +73,7 @@ If necessary, it can be downloaded from: https://huggingface.co/KwaiVGI/LivePort
 ## API
 Routes have been added to the Automatic1111 API:
 - `/live-portrait/human`: inference for humans.
-- `/live-portrait/human/retargeting/image`: retargeting for human portraits.
+- `/live-portrait/human/retargeting/image`: retargeting for human portraits. Supports an array of input parameters to generate multiple result images.
 - `/live-portrait/human/retargeting/image/init`: get retargeting lip ratio and eye ratio of human portraits.
 - `/live-portrait/human/retargeting/video`: retargeting for human videos.
 - `/live-portrait/animal`: inference for animals (not available for MacOS users or for v2.1.x pytorch versions).
@@ -90,23 +90,24 @@ Parameters are the same as LivePortrait ones (see output of command `python infe
 - `face_alignment_detector_dtype`: `fp16`, `bf16` or `fp32`. Device type to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `fp16`.
 
 Additional parameters for the `/live-portrait/human/retargeting/image` endpoint are:
-- `eye_ratio`: target eyes-open ratio (0 -> 0.8)
-- `lip_ratio`: target lip-open ratio (0 -> 0.8)
-- `head_pitch_variation`: relative pitch (-15 -> 15)
-- `head_yaw_variation`: relative yaw (-25 -> 25)
-- `head_roll_variation`: relative roll (-15 -> 15)
-- `mov_x`: x-axis movement (-0.19 -> 0.19)
-- `mov_y`: y-axis movement (-0.19 -> 0.19)
-- `mov_z`: z-axis movement (0.9 -> 1.2)
-- `lip_variation_pouting`: pouting (-0.09 -> 0.09)
-- `lip_variation_pursing`: pursing 😐 (-20 -> 15)
-- `lip_variation_grin`: grin 😁 (0 -> 15)
-- `lip_variation_opening`: lip close <-> open (-90 -> 120)
-- `smile`: smile 😄 (-0.3 -> 1.3)
-- `wink`: wink 😉 (0 -> 39)
-- `eyebrow`: eyebrow 🤨 (-30 -> 30)
-- `eyeball_direction_x`: eye gaze (horizontal) 👀 (-30 -> 30)
-- `eyeball_direction_y`: eye gaze (vertical) 🙄 (-63 -> 63)
+- `retargeting_options`: an array of objects with the following arguments:
+    - `eye_ratio`: target eyes-open ratio (0 -> 0.8)
+    - `lip_ratio`: target lip-open ratio (0 -> 0.8)
+    - `head_pitch_variation`: relative pitch (-15 -> 15)
+    - `head_yaw_variation`: relative yaw (-25 -> 25)
+    - `head_roll_variation`: relative roll (-15 -> 15)
+    - `mov_x`: x-axis movement (-0.19 -> 0.19)
+    - `mov_y`: y-axis movement (-0.19 -> 0.19)
+    - `mov_z`: z-axis movement (0.9 -> 1.2)
+    - `lip_variation_pouting`: pouting (-0.09 -> 0.09)
+    - `lip_variation_pursing`: pursing 😐 (-20 -> 15)
+    - `lip_variation_grin`: grin 😁 (0 -> 15)
+    - `lip_variation_opening`: lip close <-> open (-90 -> 120)
+    - `smile`: smile 😄 (-0.3 -> 1.3)
+    - `wink`: wink 😉 (0 -> 39)
+    - `eyebrow`: eyebrow 🤨 (-30 -> 30)
+    - `eyeball_direction_x`: eye gaze (horizontal) 👀 (-30 -> 30)
+    - `eyeball_direction_y`: eye gaze (vertical) 🙄 (-63 -> 63)
 - `retargeting_source_scale`: the ratio of face area is smaller if scale is larger
 - `flag_stitching_retargeting_input`: To apply stitching or not
 - `flag_do_crop_input_retargeting_image`: whether to crop the source portrait to the face-cropping space
