@@ -14,7 +14,7 @@ from liveportrait.config.crop_config import CropConfig
 from liveportrait.config.inference_config import InferenceConfig
 from liveportrait.gradio_pipeline import GradioPipeline, GradioPipelineAnimal
 
-from internal_liveportrait.utils import is_valid_cuda_version, isMacOS
+from internal_liveportrait.utils import download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, is_valid_cuda_version, isMacOS
 
 
 repo_root = Path(__file__).parent.parent
@@ -58,6 +58,10 @@ def on_ui_tabs():
                 bool,
                 shared.opts.data.get("live_portrait_flag_do_torch_compile", False)
             )
+
+            download_liveportrait_models()
+            if crop_model == "insightface":
+                download_insightface_models()
             
             gradio_pipeline = GradioPipeline(
                 inference_cfg=InferenceConfig(
@@ -83,6 +87,8 @@ def on_ui_tabs():
                 bool,
                 shared.opts.data.get("live_portrait_flag_do_torch_compile", False)
             )
+
+            download_liveportrait_animals_models()
 
             gradio_pipeline_animal = GradioPipelineAnimal(
                 inference_cfg=InferenceConfig(

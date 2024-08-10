@@ -20,7 +20,7 @@ from liveportrait.live_portrait_pipeline import LivePortraitPipeline
 from liveportrait.live_portrait_pipeline_animal import LivePortraitPipelineAnimal
 from liveportrait.config.base_config import make_abs_path
 
-from internal_liveportrait.utils import is_valid_cuda_version, isMacOS
+from internal_liveportrait.utils import download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, is_valid_cuda_version, isMacOS
 
 
 temp_dir = make_abs_path('../../tmp')
@@ -175,6 +175,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             crop_cfg.face_alignment_detector = payload.face_alignment_detector if payload.face_alignment_detector else default_face_alignment_detector
             crop_cfg.face_alignment_detector_device = payload.face_alignment_detector_device
             crop_cfg.face_alignment_detector_dtype = payload.face_alignment_detector_dtype
+            
+            download_liveportrait_models()
+            if crop_cfg.model == "insightface":
+                download_insightface_models()
 
             live_portrait_pipeline = LivePortraitPipeline(
                 inference_cfg=inference_cfg,
@@ -236,6 +240,8 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             argument_cfg.driving = temp_driving_file.name
 
             argument_cfg.output_dir = temp_output_dir
+
+            download_liveportrait_animals_models()
 
             live_portrait_pipeline_animal = LivePortraitPipelineAnimal(
                 inference_cfg=inference_cfg,
