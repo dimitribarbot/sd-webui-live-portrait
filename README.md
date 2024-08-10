@@ -81,6 +81,8 @@ Routes have been added to the Automatic1111 API:
 Parameters are the same as LivePortrait ones (see output of command `python inference.py --help` in LivePortrait repository) except for:
 - `source`: it can either be a path to an existing file (as in LivePortrait) or an url or a base64 encoded string. For url without file extension or base64 encoded string, the parameter `source_file_extension` must also be filled with a valid extension corresponding to the given source (e.g. `.jpg`).
 - `driving`: it can either be a path to an existing file (as in LivePortrait) or an url or a base64 encoded string. For url without file extension or base64 encoded string, the parameter `driving_file_extension` must also be filled with a valid extension corresponding to the given driving video (e.g. `.mp4`).
+- `output_mode`: `video` or `images` whether to generate an output video (the original version of LivePortrait) or multiple images at given frame indices (see frame_indices)
+- `frame_indices`: list of frame indices (1-based) where image snapshots should be generated (to be used with the 'images' output mode).
 - `send_output`: `true` if you want output videos to be sent as base64 encoded strings, `false` otherwise.
 - `save_output`: `true` if you want output videos to be saved in `output_dir` (as in LivePortrait), `false` otherwise.
 - `use_model_cache`: `true` if you want live portrait and face detector models to be cached for subsequent calls using same models, `false` otherwise.

@@ -1,5 +1,7 @@
 import base64
 import datetime
+import imageio.v3 as iio
+import io
 import os
 import requests
 import shutil
@@ -115,21 +117,7 @@ def partial_fields(target_class, kwargs):
     return target_class(**{k: v for k, v in kwargs.items() if hasattr(target_class, k)})
 
 
-def fast_check_inference_args(args: ArgumentConfig):
-    if not args.source:
-        raise ValueError("Source info is not optional")
-    if not args.driving:
-        raise ValueError("Driving info is not optional")
-
-
-def fast_check_retargeting_args(args: ArgumentConfig):
-    if not args.source:
-        raise ValueError("Source info is not optional")
-
-
-def save_input_to_temp_file(input: str, input_file_extension: str, tmpdirname: str):
-    input_extension = get_input_extension(input, input_file_extension)
-
+def save_input_to_temp_file(input: str, input_extension: str, tmpdirname: str):
     temp_source_file = tempfile.NamedTemporaryFile(dir=tmpdirname, suffix=input_extension)
     temp_source_file.close()
     temp_source_file_name = temp_source_file.name
@@ -206,7 +194,7 @@ def initialize_crop_model(
     return crop_cfg
 
 
-def rename_output_files(wfp: str, wfp_concat: str, temp_output_dir: str, new_names_to_old_names: Dict[str, str]):
+def rename_output_videos(wfp: str, wfp_concat: str, temp_output_dir: str, new_names_to_old_names: Dict[str, str]):
     new_name_wfp = os.path.basename(wfp)
     new_name_wfp_concat = os.path.basename(wfp_concat)
     for new_name, old_name in new_names_to_old_names.items():
@@ -223,19 +211,106 @@ def rename_output_files(wfp: str, wfp_concat: str, temp_output_dir: str, new_nam
     return wfp, wfp_concat
 
 
+def rename_output_videos_and_gif(wfp: str, wfp_concat: str, wfp_gif: str, temp_output_dir: str, new_names_to_old_names: Dict[str, str]):
+    wfp, wfp_concat = rename_output_videos(wfp, wfp_concat, temp_output_dir, new_names_to_old_names)
+    new_name_wfp_gif = os.path.basename(wfp_gif)
+    for new_name, old_name in new_names_to_old_names.items():
+        new_name_wfp_gif = new_name_wfp_gif.replace(new_name, old_name)
+    if new_name_wfp_gif != os.path.basename(wfp_gif):
+        new_wfp_gif = os.path.join(temp_output_dir, new_name_wfp_gif)
+        os.rename(wfp_gif, new_wfp_gif)
+        wfp_gif = new_wfp_gif
+    return wfp, wfp_concat, wfp_gif
+
+
 def save_files_output(output_dir: str, temp_output_dir: str):
     ouput_path = get_output_path(output_dir)
     timestamped_output_path = os.path.join(ouput_path, f"{datetime.date.today()}")
     shutil.copytree(temp_output_dir, timestamped_output_path, dirs_exist_ok=True)
 
 
+def save_video_frames_to_ouput(
+        wfp: str,
+        wfp_concat: str,
+        frame_indices: List[int],
+        output_dir: str,
+        temp_output_dir: str,
+        source_file_extension: str,
+        save_output: bool,
+        send_output: bool):
+    
+    animated_images = []
+    animated_images_with_concat = []
+
+    with iio.imopen(wfp, "r") as wfp_f:
+        for frame_index in frame_indices:
+            if frame_index > 0:
+                frame = wfp_f.read(index=frame_index-1)
+                if save_output:
+                    wfp_path = os.path.join(os.path.dirname(wfp), f"{basename(wfp)}_{frame_index}{source_file_extension}")
+                    iio.imwrite(wfp_path, frame, extension=source_file_extension)
+                if send_output:
+                    animated_image = iio.imwrite("<bytes>", frame, extension=source_file_extension)
+                    animated_image = (base64.b64encode(animated_image)).decode()
+                    animated_images.append(animated_image)
+    with iio.imopen(wfp_concat, "r") as wfp_concat_f:
+        for frame_index in frame_indices:
+            if frame_index > 0:
+                frame = wfp_concat_f.read(index=frame_index-1)
+                if save_output:
+                    wfp_concat_path = os.path.join(os.path.dirname(wfp_concat), f"{basename(wfp_concat)}_{frame_index}{source_file_extension}")
+                    iio.imwrite(wfp_concat_path, frame, extension=source_file_extension)
+                if send_output:
+                    animated_image_with_concat = iio.imwrite("<bytes>", frame, extension=source_file_extension)
+                    animated_image_with_concat = (base64.b64encode(animated_image_with_concat)).decode()
+                    animated_images_with_concat.append(animated_image_with_concat)
+
+    if save_output:
+        os.remove(wfp)
+        os.remove(wfp_concat)
+        save_files_output(output_dir, temp_output_dir)
+
+    return animated_images, animated_images_with_concat
+
+
+def save_videos_to_ouput(wfp: str, wfp_concat: str, output_dir: str, temp_output_dir: str, save_output: bool, send_output: bool):
+    if save_output:
+        save_files_output(output_dir, temp_output_dir)
+
+    if send_output:
+        with open(wfp, 'rb') as wfp_f:
+            animated_video = (base64.b64encode(wfp_f.read())).decode()
+        with open(wfp_concat, 'rb') as wfp_concat_f:
+            animated_video_with_concat = (base64.b64encode(wfp_concat_f.read())).decode()
+    else:
+        animated_video = None
+        animated_video_with_concat = None
+    
+    return animated_video, animated_video_with_concat
+
+
+def save_videos_and_gif_to_ouput(wfp: str, wfp_concat: str, wfp_gif: str, output_dir: str, temp_output_dir: str, save_output: bool, send_output: bool):
+    animated_video, animated_video_with_concat = save_videos_to_ouput(wfp, wfp_concat, output_dir, temp_output_dir, save_output, send_output)
+
+    if send_output:
+        with open(wfp_gif, 'rb') as wfp_gif_f:
+            animated_gif = (base64.b64encode(wfp_gif_f.read())).decode()
+    else:
+        animated_gif = None
+    
+    return animated_video, animated_video_with_concat, animated_gif
+
+
 def live_portrait_api(_: gr.Blocks, app: FastAPI):
+    
     class LivePortraitRequest(BaseModel):
         source: str = ""  # path to the source portrait (human/animal) or video (human) or base64 encoded one
         source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
         driving: str = ""  # path to driving video or template (.pkl format) or base64 encoded one
         driving_file_extension: str = ".mp4"  # driving file extension if driving is a base64 encoded string or url
         output_dir: str = 'outputs/live-portrait/'  # directory to save output video
+        output_mode: Literal["video", "images"] = "video"  # whether to generate an output video or multiple images at given frame indices (see frame_indices)
+        frame_indices: List[int] = []  # frame indices where image snapshots should be generated (to be used with the 'images' output mode)
         send_output: bool = True
         save_output: bool = False
         use_model_cache: bool = True
@@ -277,23 +352,35 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
 
 
+    def fast_check_inference_args(payload: LivePortraitRequest):
+        if not payload.source:
+            raise ValueError("Source info is not optional")
+        if not payload.driving:
+            raise ValueError("Driving info is not optional")
+        if payload.output_mode == "images" and (payload.frame_indices is None or len(payload.frame_indices) == 0):
+            raise ValueError("Frame indices are not optional when using 'images' output mode")
+
+
     @app.post("/live-portrait/human")
     async def execute_human(payload: LivePortraitRequest = Body(...)) -> Any:
         print("Live Portrait API /live-portrait/human received request")
+
+        fast_check_inference_args(payload)
 
         argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
         inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
         crop_cfg = partial_fields(CropConfig, payload.__dict__)
 
-        fast_check_inference_args(argument_cfg)
-
         os.makedirs(temp_dir, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temp_dir) as tmpdirname:
             temp_output_dir = os.path.join(tmpdirname, "output")
             os.makedirs(temp_output_dir, exist_ok=True)
+
+            source_file_extension = get_input_extension(payload.source, payload.source_file_extension)
+            driving_file_extension = get_input_extension(payload.driving, payload.driving_file_extension)
             
-            argument_cfg.source = save_input_to_temp_file(payload.source, payload.source_file_extension, tmpdirname)
-            argument_cfg.driving = save_input_to_temp_file(payload.driving, payload.driving_file_extension, tmpdirname)
+            argument_cfg.source = save_input_to_temp_file(payload.source, source_file_extension, tmpdirname)
+            argument_cfg.driving = save_input_to_temp_file(payload.driving, driving_file_extension, tmpdirname)
 
             new_names_to_old_names = {
                 basename(argument_cfg.source): basename(payload.source),
@@ -321,22 +408,31 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             )
 
             wfp, wfp_concat = live_portrait_pipeline.execute(argument_cfg)
-            wfp, wfp_concat = rename_output_files(wfp, wfp_concat, temp_output_dir, new_names_to_old_names)
+            wfp, wfp_concat = rename_output_videos(wfp, wfp_concat, temp_output_dir, new_names_to_old_names)
 
-            if payload.save_output:
-                save_files_output(payload.output_dir, temp_output_dir)
-
-            if payload.send_output:
-                with open(wfp, 'rb') as wfp_f:
-                    animated_video = (base64.b64encode(wfp_f.read())).decode()
-                with open(wfp_concat, 'rb') as wfp_concat_f:
-                    animated_video_with_concat = (base64.b64encode(wfp_concat_f.read())).decode()
-            else:
-                animated_video = None
-                animated_video_with_concat = None
-
+            if payload.output_mode == "images":
+                animated_images, animated_images_with_concat = save_video_frames_to_ouput(
+                    wfp,
+                    wfp_concat,
+                    payload.frame_indices,
+                    payload.output_dir,
+                    temp_output_dir,
+                    source_file_extension,
+                    payload.save_output,
+                    payload.send_output
+                )
+                print("Live Portrait API /live-portrait/human finished")
+                return {"animated_images": animated_images, "animated_images_with_concat": animated_images_with_concat }  
+            
+            animated_video, animated_video_with_concat = save_videos_to_ouput(
+                wfp,
+                wfp_concat,
+                payload.output_dir,
+                temp_output_dir,
+                payload.save_output,
+                payload.send_output
+            )
             print("Live Portrait API /live-portrait/human finished")
-
             return {"animated_video": animated_video, "animated_video_with_concat": animated_video_with_concat }
         
 
@@ -360,21 +456,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         eyeball_direction_y: float = 0  # eye gaze (vertical) (-63 -> 63)
 
 
-    class LivePortraitImageRetargetingRequest(BaseModel):
+    class LivePortraitCommonRetargetingRequest(BaseModel):
         source: str = ""  # path to the source portrait or base64 encoded one
         source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
-        output_dir: str = 'outputs/live-portrait/'  # directory to save output video
-        send_output: bool = True
-        save_output: bool = False
         use_model_cache: bool = True
-
-        ########## retargeting arguments ##########
-        retargeting_options: List[LivePortraitImageRetargetingOptions] = [
-            LivePortraitImageRetargetingOptions()
-        ]
-        retargeting_source_scale: float = 2.5  # the ratio of face area is smaller if scale is larger
-        flag_stitching_retargeting_input = True  # To apply stitching or not
-        flag_do_crop_input_retargeting_image: bool = True  # whether to crop the source portrait to the face-cropping space
 
         ########## source crop arguments ##########
         device_id: int = 0  # gpu device id
@@ -389,22 +474,43 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
 
 
+    class LivePortraitImageRetargetingRequest(LivePortraitCommonRetargetingRequest):        
+        output_dir: str = 'outputs/live-portrait/'  # directory to save output video
+        send_output: bool = True
+        save_output: bool = False
+
+        ########## retargeting arguments ##########
+        retargeting_options: List[LivePortraitImageRetargetingOptions] = [
+            LivePortraitImageRetargetingOptions()
+        ]
+        retargeting_source_scale: float = 2.5  # the ratio of face area is smaller if scale is larger
+        flag_stitching_retargeting_input = True  # To apply stitching or not
+        flag_do_crop_input_retargeting_image: bool = True  # whether to crop the source portrait to the face-cropping space
+
+
+    def fast_check_retargeting_args(payload: LivePortraitCommonRetargetingRequest):
+        if not payload.source:
+            raise ValueError("Source info is not optional")
+
+
     @app.post("/live-portrait/human/retargeting/image")
     async def execute_image_retargeting(payload: LivePortraitImageRetargetingRequest = Body(...)) -> Any:
         print("Live Portrait API /live-portrait/human/retargeting/image received request")
-        
+
+        fast_check_retargeting_args(payload)
+
         argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
         inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
         crop_cfg = partial_fields(CropConfig, payload.__dict__)
-
-        fast_check_retargeting_args(argument_cfg)
 
         os.makedirs(temp_dir, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temp_dir) as tmpdirname:
             temp_output_dir  = os.path.join(tmpdirname, "output")
             os.makedirs(temp_output_dir, exist_ok=True)
 
-            argument_cfg.source = save_input_to_temp_file(payload.source, payload.source_file_extension, tmpdirname)
+            source_file_extension = get_input_extension(payload.source, payload.source_file_extension)
+
+            argument_cfg.source = save_input_to_temp_file(payload.source, source_file_extension, tmpdirname)
 
             argument_cfg.output_dir = temp_output_dir
 
@@ -478,42 +584,28 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             return {"retargeting_images": retargeting_images, "retargeting_images_cropped": retargeting_images_cropped }
 
 
-    class LivePortraitImageRetargetingInitRequest(BaseModel):
-        source: str = ""  # path to the source portrait or base64 encoded one
-        source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
-        use_model_cache: bool = True
-
+    class LivePortraitImageRetargetingInitRequest(LivePortraitCommonRetargetingRequest):
         ########## retargeting arguments ##########
         eye_ratio: float = 0  # target eyes-open ratio (0 -> 0.8)
         lip_ratio: float = 0  # target lip-open ratio (0 -> 0.8)
         retargeting_source_scale: float = 2.5  # the ratio of face area is smaller if scale is larger
-
-        ########## source crop arguments ##########
-        device_id: int = 0  # gpu device id
-        flag_force_cpu: bool = False  # force cpu inference, WIP!
-        det_thresh: float = 0.15 # detection threshold
-        vx_ratio: float = 0  # the ratio to move the face to left or right in cropping space
-        vy_ratio: float = -0.125  # the ratio to move the face to up or down in cropping space
-        flag_do_rot: bool = True  # whether to conduct the rotation when flag_do_crop is True
-        human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
-        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
-        face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
-        face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
         
 
     @app.post("/live-portrait/human/retargeting/image/init")
     async def init_image_retargeting(payload: LivePortraitImageRetargetingInitRequest = Body(...)) -> Any:
         print("Live Portrait API /live-portrait/human/retargeting/image/init received request")
+
+        fast_check_retargeting_args(payload)
         
         argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
         inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
         crop_cfg = partial_fields(CropConfig, payload.__dict__)
 
-        fast_check_retargeting_args(argument_cfg)
-
         os.makedirs(temp_dir, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temp_dir) as tmpdirname:
-            argument_cfg.source = save_input_to_temp_file(payload.source, payload.source_file_extension, tmpdirname)
+            source_file_extension = get_input_extension(payload.source, payload.source_file_extension)
+
+            argument_cfg.source = save_input_to_temp_file(payload.source, source_file_extension, tmpdirname)
 
             initialize_crop_model(
                 crop_cfg,
@@ -546,13 +638,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             return {"source_eye_ratio": source_eye_ratio, "source_lip_ratio": source_lip_ratio }
 
     
-    class LivePortraitVideoRetargetingRequest(BaseModel):
-        source: str = ""  # path to the source video or base64 encoded one
-        source_file_extension: str = ".mp4"  # source file extension if source is a base64 encoded string or url
+    class LivePortraitVideoRetargetingRequest(LivePortraitCommonRetargetingRequest):
         output_dir: str = 'outputs/live-portrait/'  # directory to save output video
         send_output: bool = True
         save_output: bool = False
-        use_model_cache: bool = True
 
         ########## retargeting arguments ##########
         lip_ratio: float = 0  # target lip-open ratio (0 -> 0.8)
@@ -560,35 +649,25 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         driving_smooth_observation_variance_retargeting: float = 3e-6  # motion smooth strength
         flag_do_crop_input_retargeting_video: bool = True  # whether to crop the source video to the face-cropping space
 
-        ########## source crop arguments ##########
-        device_id: int = 0  # gpu device id
-        flag_force_cpu: bool = False  # force cpu inference, WIP!
-        det_thresh: float = 0.15 # detection threshold
-        vx_ratio: float = 0  # the ratio to move the face to left or right in cropping space
-        vy_ratio: float = -0.125  # the ratio to move the face to up or down in cropping space
-        flag_do_rot: bool = True  # whether to conduct the rotation when flag_do_crop is True
-        human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
-        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
-        face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
-        face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
-
 
     @app.post("/live-portrait/human/retargeting/video")
     async def execute_video_retargeting(payload: LivePortraitVideoRetargetingRequest = Body(...)) -> Any:
         print("Live Portrait API /live-portrait/human/retargeting/video received request")
+
+        fast_check_retargeting_args(payload)
         
         argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
         inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
         crop_cfg = partial_fields(CropConfig, payload.__dict__)
-
-        fast_check_retargeting_args(argument_cfg)
 
         os.makedirs(temp_dir, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temp_dir) as tmpdirname:
             temp_output_dir  = os.path.join(tmpdirname, "output")
             os.makedirs(temp_output_dir, exist_ok=True)
 
-            argument_cfg.source = save_input_to_temp_file(payload.source, payload.source_file_extension, tmpdirname)
+            source_file_extension = get_input_extension(payload.source, payload.source_file_extension)
+
+            argument_cfg.source = save_input_to_temp_file(payload.source, source_file_extension, tmpdirname)
 
             new_names_to_old_names = {
                 basename(argument_cfg.source): basename(payload.source)
@@ -622,19 +701,16 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
                 payload.driving_smooth_observation_variance_retargeting,
                 payload.flag_do_crop_input_retargeting_video
             )
-            wfp, wfp_concat = rename_output_files(wfp, wfp_concat, temp_output_dir, new_names_to_old_names)
+            wfp, wfp_concat = rename_output_videos(wfp, wfp_concat, temp_output_dir, new_names_to_old_names)
 
-            if payload.save_output:
-                save_files_output(payload.output_dir, temp_output_dir)
-
-            if payload.send_output:
-                with open(wfp, 'rb') as wfp_f:
-                    retargeting_video = (base64.b64encode(wfp_f.read())).decode()
-                with open(wfp_concat, 'rb') as wfp_concat_f:
-                    retargeting_video_with_concat = (base64.b64encode(wfp_concat_f.read())).decode()
-            else:
-                retargeting_video = None
-                retargeting_video_with_concat = None
+            retargeting_video, retargeting_video_with_concat = save_videos_to_ouput(
+                wfp,
+                wfp_concat,
+                payload.output_dir,
+                temp_output_dir,
+                payload.save_output,
+                payload.send_output
+            )
 
             print("Live Portrait API /live-portrait/human/retargeting/video finished")
 
@@ -648,20 +724,23 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             raise OSError("XPose model, necessary to generate animal videos, is incompatible with MacOS systems.")
         if not is_valid_cuda_version():
             raise SystemError("XPose model, necessary to generate animal videos, is incompatible with pytorch version 2.1.x.")
+
+        fast_check_inference_args(payload)
         
         argument_cfg = partial_fields(ArgumentConfig, payload.__dict__)
         inference_cfg = partial_fields(InferenceConfig, payload.__dict__)
         crop_cfg = partial_fields(CropConfig, payload.__dict__)
-
-        fast_check_inference_args(argument_cfg)
 
         os.makedirs(temp_dir, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=temp_dir) as tmpdirname:
             temp_output_dir  = os.path.join(tmpdirname, "output")
             os.makedirs(temp_output_dir, exist_ok=True)
 
-            argument_cfg.source = save_input_to_temp_file(payload.source, payload.source_file_extension, tmpdirname)
-            argument_cfg.driving = save_input_to_temp_file(payload.driving, payload.driving_file_extension, tmpdirname)
+            source_file_extension = get_input_extension(payload.source, payload.source_file_extension)
+            driving_file_extension = get_input_extension(payload.driving, payload.driving_file_extension)
+
+            argument_cfg.source = save_input_to_temp_file(payload.source, source_file_extension, tmpdirname)
+            argument_cfg.driving = save_input_to_temp_file(payload.driving, driving_file_extension, tmpdirname)
 
             new_names_to_old_names = {
                 basename(argument_cfg.source): basename(payload.source),
@@ -679,26 +758,33 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             )
 
             wfp, wfp_concat, wfp_gif = live_portrait_pipeline_animal.execute(argument_cfg)
-            wfp, wfp_concat = rename_output_files(wfp, wfp_concat, temp_output_dir, new_names_to_old_names)
+            wfp, wfp_concat, wfp_gif = rename_output_videos_and_gif(wfp, wfp_concat, wfp_gif, temp_output_dir, new_names_to_old_names)
 
-            if payload.save_output:
-                save_files_output(payload.output_dir, temp_output_dir)
-
-            if payload.send_output:
-                with open(wfp, 'rb') as wfp_f:
-                    animated_video = (base64.b64encode(wfp_f.read())).decode()
-                with open(wfp_concat, 'rb') as wfp_concat_f:
-                    animated_video_with_concat = (base64.b64encode(wfp_concat_f.read())).decode()
-                with open(wfp_gif, 'rb') as wfp_gif_f:
-                    animated_gif = (base64.b64encode(wfp_gif_f.read())).decode()
-            else:
-                animated_video = None
-                animated_video_with_concat = None
-                animated_gif = None
-        
+            if payload.output_mode == "images":
+                animated_images, animated_images_with_concat = save_video_frames_to_ouput(
+                    wfp,
+                    wfp_concat,
+                    payload.frame_indices,
+                    payload.output_dir,
+                    temp_output_dir,
+                    source_file_extension,
+                    payload.save_output,
+                    payload.send_output
+                )                
+                print("Live Portrait API /live-portrait/animal finished")
+                return {"animated_images": animated_images, "animated_images_with_concat": animated_images_with_concat }  
+            
+            animated_image, animated_image_with_concat, animated_gif = save_videos_and_gif_to_ouput(
+                wfp,
+                wfp_concat,
+                wfp_gif,
+                payload.output_dir,
+                temp_output_dir,
+                payload.save_output,
+                payload.send_output
+            )
             print("Live Portrait API /live-portrait/animal finished")
-
-            return {"animated_video": animated_video, "animated_video_with_concat": animated_video_with_concat, "animated_gif": animated_gif }
+            return {"animated_video": animated_image, "animated_video_with_concat": animated_image_with_concat }
         
 
 try:
