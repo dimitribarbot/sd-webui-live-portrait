@@ -13,7 +13,7 @@ This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.c
 1. Open "Install from URL" tab in the tab.
 1. Enter https://github.com/dimitribarbot/sd-webui-live-portrait.git to "URL for extension's git repository".
 1. Press "Install" button.
-1. It may take a few minutes to install. XPose will be compiled and InsightFace, XPose and LivePortrait models should be downloaded. At the end, you will see the message "Installed into stable-diffusion-webui\extensions\sd-webui-live-portrait. Use Installed tab to restart".
+1. It may take a few minutes to install as XPose may be compiled. At the end, you will see the message "Installed into stable-diffusion-webui\extensions\sd-webui-live-portrait. Use Installed tab to restart".
 1. Go to "Installed" tab, click "Check for updates", and then click "Apply and restart UI". (The next time you can also use these buttons to update this extension.)
 
 ### /!\ Important notes /!\
@@ -55,7 +55,7 @@ In the Automatic1111 settings tab, under the Live Portrait section, you can find
 
 ### LivePortrait
 
-Model files go here (automatically downloaded if the folder is not present during install): `stable-diffusion-webui/models/liveportrait` (human) and `stable-diffusion-webui/models/liveportrait_animals` (animals).  
+Model files go here (automatically downloaded if the folder is not present during first run): `stable-diffusion-webui/models/liveportrait` (human) and `stable-diffusion-webui/models/liveportrait_animals` (animals).  
 
 Pickle files have all been converted to safetensors by Kijai. If necessary, they can be downloaded from: https://huggingface.co/Kijai/LivePortrait_safetensors/tree/main (thanks to him).  
 
@@ -64,16 +64,16 @@ For human mode, you can either use the original default [Insightface](https://gi
 
 Biggest difference is the license: Insightface is strictly for NON-COMMERCIAL use. MediaPipe is a bit worse at detection, and can't run on GPU in Windows, though it's much faster on CPU compared to Insightface. Face Alignment can use blazeface back camera model (or SFD), it's far better for smaller faces than MediaPipe, that only can use the blazeface short model. The warmup on the first run when using this can take a long time, but subsequent runs are quick.
 
-Insightface models go here (automatically downloaded if the folder is not present during install): `stable-diffusion-webui/models/insightface/models/buffalo_l`. If necessary, they can be downloaded from: https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip.
+Insightface models go here (automatically downloaded if the folder is not present during first run): `stable-diffusion-webui/models/insightface/models/buffalo_l`. If necessary, they can be downloaded from: https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip.
 
-For animal mode, this extension is using XPose which is also strictly for NON-COMMERCIAL use and is not compatible with MacOS. XPose model goes here (automatically downloaded if not present duing install): `stable-diffusion-webui/models/liveportrait_animals`.  
+For animal mode, this extension is using XPose which is also strictly for NON-COMMERCIAL use and is not compatible with MacOS. XPose model goes here (automatically downloaded if not present during first run): `stable-diffusion-webui/models/liveportrait_animals`.  
 
 If necessary, it can be downloaded from: https://huggingface.co/KwaiVGI/LivePortrait/resolve/main/liveportrait_animals/xpose.pth.
 
 ## API
 2 routes have been added to the Automatic1111 API:
 - `/live-portrait/human`: inference for humans.
-- `/live-portrait/animal`: inference for animals (not available for MacOS users).
+- `/live-portrait/animal`: inference for animals (not available for MacOS users or for v2.1.x pytorch versions).
 
 Parameters are the same as LivePortrait ones (see output of command `python inference.py --help` in LivePortrait repository) except for:
 - `source`: it can either be a path to an existing file (as in LivePortrait) or an url or a base64 encoded string. For url without file extension or base64 encoded string, the parameter `source_file_extension` must also be filled with a valid extension corresponding to the given source (e.g. `.jpg`).
