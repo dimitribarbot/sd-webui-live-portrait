@@ -19,8 +19,8 @@ from internal_liveportrait.utils import download_insightface_models, download_li
 
 repo_root = Path(__file__).parent.parent
 
-gradio_pipeline = None
-gradio_pipeline_animal = None
+gradio_pipeline: GradioPipeline | None = None
+gradio_pipeline_animal: GradioPipelineAnimal | None = None
 
 
 class Script(scripts.Script):
@@ -38,71 +38,104 @@ class Script(scripts.Script):
 
 
 def on_ui_tabs():
+    def clear_model_cache():
+        global gradio_pipeline, gradio_pipeline_animal
+        gradio_pipeline = None
+        gradio_pipeline_animal = None
+        devices.torch_gc()
+
+    def get_crop_config():
+        crop_model = cast(
+            Literal['insightface', 'mediapipe', 'facealignment'],
+            cast(str, shared.opts.data.get("live_portrait_human_face_detector", 'insightface')).lower()
+        )
+
+        face_alignment_detector = cast(
+            Literal['blazeface', 'blazeface_back_camera', 'sfd'],
+            cast(str, shared.opts.data.get("live_portrait_face_alignment_detector", 'blazeface_back_camera')).lower().replace(' ', '_')
+        )
+
+        face_alignment_detector_device = cast(
+            Literal['cuda', 'cpu', 'mps'],
+            cast(str, shared.opts.data.get("live_portrait_face_alignment_detector_device", 'cuda')).lower()
+        )
+
+        face_alignment_detector_dtype = cast(
+            Literal['fp16', 'bf16', 'fp32'],
+            cast(str, shared.opts.data.get("live_portrait_face_alignment_detector_dtype", 'fp16')).lower()
+        )
+
+        return CropConfig(
+            model=crop_model,
+            face_alignment_detector=face_alignment_detector,
+            face_alignment_detector_device=face_alignment_detector_device,
+            face_alignment_detector_dtype=face_alignment_detector_dtype
+        )
+
+    def get_inference_config():
+        flag_do_torch_compile = cast(
+            bool,
+            shared.opts.data.get("live_portrait_flag_do_torch_compile", False)
+        )
+
+        return InferenceConfig(
+            flag_do_torch_compile=flag_do_torch_compile
+        )
+
+    def get_argument_config():
+        output_dir = osp.join(data_path, "outputs", "live-portrait", f"{datetime.date.today()}")
+
+        return ArgumentConfig(
+            output_dir=output_dir
+        )
+
     def init_gradio_pipeline():
         global gradio_pipeline, gradio_pipeline_animal
-        if not gradio_pipeline:
-            output_dir = osp.join(data_path, "outputs", "live-portrait", f"{datetime.date.today()}")
-            gradio_pipeline_animal = None
 
-            devices.torch_gc()
+        inference_cfg = get_inference_config()
+        crop_cfg = get_crop_config()
+        argument_cfg = get_argument_config()
+        
+        if not gradio_pipeline or gradio_pipeline.cropper.crop_cfg.model != crop_cfg.model or \
+            (crop_cfg.model == "facealignment" and (gradio_pipeline.cropper.crop_cfg.face_alignment_detector != crop_cfg.face_alignment_detector \
+                                                    or gradio_pipeline.cropper.crop_cfg.face_alignment_detector_device != crop_cfg.face_alignment_detector_device
+                                                    or gradio_pipeline.cropper.crop_cfg.face_alignment_detector_dtype != crop_cfg.face_alignment_detector_dtype)):
             
-            crop_model = cast(
-                Literal['insightface', 'mediapipe', 'facealignment'],
-                cast(str, shared.opts.data.get("live_portrait_human_face_detector", 'insightface')).lower()
-            )
-
-            face_alignment_detector = cast(
-                Literal['blazeface', 'blazeface_back_camera', 'sfd'],
-                cast(str, shared.opts.data.get("live_portrait_face_alignment_detector", 'blazeface_back_camera')).lower().replace(' ', '_')
-            )
-
-            flag_do_torch_compile = cast(
-                bool,
-                shared.opts.data.get("live_portrait_flag_do_torch_compile", False)
-            )
+            clear_model_cache()
 
             download_liveportrait_models()
-            if crop_model == "insightface":
+            if crop_cfg.model == "insightface":
                 download_insightface_models()
             
             gradio_pipeline = GradioPipeline(
-                inference_cfg=InferenceConfig(
-                    flag_do_torch_compile=flag_do_torch_compile
-                ),
-                crop_cfg=CropConfig(
-                    model=crop_model,
-                    face_alignment_detector=face_alignment_detector
-                ),
-                args=ArgumentConfig(
-                    output_dir=output_dir
-                )
+                inference_cfg=inference_cfg,
+                crop_cfg=crop_cfg,
+                args=argument_cfg
             )
+        else:
+            gradio_pipeline.cropper.update_config(crop_cfg.__dict__)
+            gradio_pipeline.live_portrait_wrapper.update_config(inference_cfg.__dict__)
         return gradio_pipeline
     
     def init_gradio_pipeline_animal():
         global gradio_pipeline, gradio_pipeline_animal
+
+        inference_cfg = get_inference_config()
+        crop_cfg = CropConfig()
+        argument_cfg = get_argument_config()
+
         if not gradio_pipeline_animal:
-            output_dir = osp.join(data_path, "outputs", "live-portrait", f"{datetime.date.today()}")
-            gradio_pipeline = None
-
-            devices.torch_gc()
-
-            flag_do_torch_compile = cast(
-                bool,
-                shared.opts.data.get("live_portrait_flag_do_torch_compile", False)
-            )
+            clear_model_cache()
 
             download_liveportrait_animals_models()
 
             gradio_pipeline_animal = GradioPipelineAnimal(
-                inference_cfg=InferenceConfig(
-                    flag_do_torch_compile=flag_do_torch_compile
-                ),
-                crop_cfg=CropConfig(),
-                args=ArgumentConfig(
-                    output_dir=output_dir
-                )
+                inference_cfg=inference_cfg,
+                crop_cfg=crop_cfg,
+                args=argument_cfg
             )
+        else:
+            gradio_pipeline_animal.live_portrait_wrapper_animal.update_config(inference_cfg.__dict__)
         return gradio_pipeline_animal
 
     def gpu_wrapped_execute_video(*args, **kwargs):
@@ -715,7 +748,7 @@ def on_ui_settings():
             component=gr.Radio,
             component_args={"choices": ["InsightFace", "MediaPipe", "FaceAlignment"]},
             section=section,
-        ).needs_reload_ui(),
+        ),
     )
 
     shared.opts.add_option(
@@ -726,7 +759,29 @@ def on_ui_settings():
             component=gr.Radio,
             component_args={"choices": ["BlazeFace", "BlazeFace Back Camera", "SFD"]},
             section=section,
-        ).needs_reload_ui(),
+        ),
+    )
+
+    shared.opts.add_option(
+        "live_portrait_face_alignment_detector_device",
+        shared.OptionInfo(
+            default="CUDA",
+            label="Face alignment detector device",
+            component=gr.Radio,
+            component_args={"choices": ["CUDA", "CPU", "MPS"]},
+            section=section,
+        ),
+    )
+
+    shared.opts.add_option(
+        "live_portrait_face_alignment_detector_dtype",
+        shared.OptionInfo(
+            default="fp16",
+            label="Face alignment detector dtype",
+            component=gr.Radio,
+            component_args={"choices": ["fp16", "bf16", "fp32"]},
+            section=section,
+        ),
     )
 
     shared.opts.add_option(
@@ -735,7 +790,7 @@ def on_ui_settings():
             False,
             "Enable torch.compile for faster inference",
             section=section
-        ).needs_reload_ui(),
+        ),
     )
 
 

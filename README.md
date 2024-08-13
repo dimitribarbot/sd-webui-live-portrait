@@ -49,6 +49,8 @@ In the Automatic1111 settings tab, under the Live Portrait section, you can find
 
 - `Human face detector` (`live_portrait_human_face_detector` entry in `config.json`): configures the face detector model for human inference, either the default original InsightFace, MediaPipe or Face Alignment.
 - `Face alignment detector` (`live_portrait_face_alignment_detector` entry in `config.json`): configures the face detector model for human inference when using Face Alignment.
+- `Face alignment detector device` (`live_portrait_face_alignment_detector_device` entry in `config.json`): configures the face detector model device for human inference when using Face Alignment.
+- `Face alignment detector dtype` (`live_portrait_face_alignment_detector_dtype` entry in `config.json`): configures the face detector model dtype for human inference when using Face Alignment.
 - `Enable torch.compile for faster inference` (`live_portrait_flag_do_torch_compile` entry in `config.json`): the first-time inference triggers an optimization process (about one minute), making subsequent inferences 20-30% faster. Performance gains may vary with different CUDA versions.
 
 ## Models

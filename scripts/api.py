@@ -172,9 +172,9 @@ def get_output_path(output_dir):
 def initialize_crop_model(
         crop_cfg: CropConfig,
         human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None,
-        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera',
-        face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda',
-        face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'):
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = None,
+        face_alignment_detector_device: Literal[None, 'cuda', 'cpu', 'mps'] = None,
+        face_alignment_detector_dtype: Literal[None, 'fp16', 'bf16', 'fp32'] = None):
     
     default_crop_model = cast(
         Literal['insightface', 'mediapipe', 'facealignment'],
@@ -186,10 +186,20 @@ def initialize_crop_model(
         cast(str, opts.data.get("live_portrait_face_alignment_detector", 'blazeface_back_camera')).lower().replace(' ', '_')
     )
 
+    default_face_alignment_detector_device = cast(
+        Literal['cuda', 'cpu', 'mps'],
+        cast(str, opts.data.get("live_portrait_face_alignment_detector_device", 'cuda')).lower()
+    )
+
+    default_face_alignment_detector_dtype = cast(
+        Literal['fp16', 'bf16', 'fp32'],
+        cast(str, opts.data.get("live_portrait_face_alignment_detector_dtype", 'fp16')).lower()
+    )
+
     crop_cfg.model = human_face_detector if human_face_detector else default_crop_model
     crop_cfg.face_alignment_detector = face_alignment_detector if face_alignment_detector else default_face_alignment_detector
-    crop_cfg.face_alignment_detector_device = face_alignment_detector_device
-    crop_cfg.face_alignment_detector_dtype = face_alignment_detector_dtype
+    crop_cfg.face_alignment_detector_device = face_alignment_detector_device if face_alignment_detector_device else default_face_alignment_detector_device
+    crop_cfg.face_alignment_detector_dtype = face_alignment_detector_dtype if face_alignment_detector_dtype else default_face_alignment_detector_dtype
     
     return crop_cfg
 
@@ -347,9 +357,9 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         vx_ratio_crop_driving_video: float = 0.  # adjust y offset
         vy_ratio_crop_driving_video: float = -0.1  # adjust x offset
         human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
-        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
-        face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
-        face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = None
+        face_alignment_detector_device: Literal[None, 'cuda', 'cpu', 'mps'] = None
+        face_alignment_detector_dtype: Literal[None, 'fp16', 'bf16', 'fp32'] = None
 
 
     def fast_check_inference_args(payload: LivePortraitRequest):
@@ -469,9 +479,9 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         vy_ratio: float = -0.125  # the ratio to move the face to up or down in cropping space
         flag_do_rot: bool = True  # whether to conduct the rotation when flag_do_crop is True
         human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
-        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
-        face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
-        face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = None
+        face_alignment_detector_device: Literal[None, 'cuda', 'cpu', 'mps'] = None
+        face_alignment_detector_dtype: Literal[None, 'fp16', 'bf16', 'fp32'] = None
 
 
     class LivePortraitImageRetargetingRequest(LivePortraitCommonRetargetingRequest):        
