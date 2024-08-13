@@ -361,6 +361,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         face_alignment_detector_device: Literal[None, 'cuda', 'cpu', 'mps'] = None
         face_alignment_detector_dtype: Literal[None, 'fp16', 'bf16', 'fp32'] = None
 
+        ########## face index ##########
+        source_face_index: int = 0  # source image or video face index
+        driving_face_index: int = 0  # driving video face index
+
 
     def fast_check_inference_args(payload: LivePortraitRequest):
         if not payload.source:
@@ -482,6 +486,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = None
         face_alignment_detector_device: Literal[None, 'cuda', 'cpu', 'mps'] = None
         face_alignment_detector_dtype: Literal[None, 'fp16', 'bf16', 'fp32'] = None
+        source_face_index: int = 0  # source image or video face index
 
 
     class LivePortraitImageRetargetingRequest(LivePortraitCommonRetargetingRequest):        
@@ -566,6 +571,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
                     retargeting_option.eyeball_direction_x,
                     retargeting_option.eyeball_direction_y,
                     argument_cfg.source,
+                    payload.source_face_index,
                     payload.retargeting_source_scale,
                     payload.flag_stitching_retargeting_input,
                     payload.flag_do_crop_input_retargeting_image
@@ -637,6 +643,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             )
 
             source_eye_ratio, source_lip_ratio = retargeting_pipeline.init_retargeting_image(
+                payload.source_face_index,
                 payload.retargeting_source_scale,
                 payload.eye_ratio,
                 payload.lip_ratio,
@@ -707,6 +714,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             wfp_concat, wfp = retargeting_pipeline.execute_video_retargeting(
                 payload.lip_ratio,
                 argument_cfg.source,
+                payload.source_face_index,
                 payload.retargeting_source_scale,
                 payload.driving_smooth_observation_variance_retargeting,
                 payload.flag_do_crop_input_retargeting_video

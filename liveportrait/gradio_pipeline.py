@@ -158,9 +158,11 @@ class GradioPipeline(LivePortraitPipeline):
         driving_multiplier=1.0,
         flag_crop_driving_video_input=True,
         flag_video_editing_head_rotation=False,
+        source_face_index=0,
         scale=2.3,
         vx_ratio=0.0,
         vy_ratio=-0.125,
+        driving_face_index=0,
         scale_crop_driving_video=2.2,
         vx_ratio_crop_driving_video=0.0,
         vy_ratio_crop_driving_video=-0.1,
@@ -201,9 +203,11 @@ class GradioPipeline(LivePortraitPipeline):
                 'driving_multiplier': driving_multiplier,
                 'flag_crop_driving_video': flag_crop_driving_video_input,
                 'flag_video_editing_head_rotation': flag_video_editing_head_rotation,
+                'source_face_index': source_face_index,
                 'scale': scale,
                 'vx_ratio': vx_ratio,
                 'vy_ratio': vy_ratio,
+                'driving_face_index': driving_face_index,
                 'scale_crop_driving_video': scale_crop_driving_video,
                 'vx_ratio_crop_driving_video': vx_ratio_crop_driving_video,
                 'vy_ratio_crop_driving_video': vy_ratio_crop_driving_video,
@@ -241,6 +245,7 @@ class GradioPipeline(LivePortraitPipeline):
         eyeball_direction_x: float,
         eyeball_direction_y: float,
         input_image,
+        source_face_index: int,
         retargeting_source_scale: float,
         flag_stitching_retargeting_input=True,
         flag_do_crop_input_retargeting_image=True):
@@ -251,7 +256,7 @@ class GradioPipeline(LivePortraitPipeline):
         # disposable feature
         f_s_user, x_s_user, R_s_user, R_d_user, x_s_info, source_lmk_user, crop_M_c2o, mask_ori, img_rgb = \
             self.prepare_retargeting_image(
-                input_image, input_head_pitch_variation, input_head_yaw_variation, input_head_roll_variation, retargeting_source_scale, flag_do_crop=flag_do_crop_input_retargeting_image)
+                input_image, input_head_pitch_variation, input_head_yaw_variation, input_head_roll_variation, source_face_index, retargeting_source_scale, flag_do_crop=flag_do_crop_input_retargeting_image)
 
         if input_eye_ratio is None or input_lip_ratio is None:
             raise gr.Error("Invalid ratio input 💥!")
@@ -329,13 +334,14 @@ class GradioPipeline(LivePortraitPipeline):
         self,
         input_image,
         input_head_pitch_variation, input_head_yaw_variation, input_head_roll_variation,
+        source_face_index,
         retargeting_source_scale,
         flag_do_crop=True):
         """ for single image retargeting
         """
         if input_image is not None:
             # gr.Info("Upload successfully!")
-            args_user = {'scale': retargeting_source_scale}
+            args_user = {'source_face_index': source_face_index, 'scale': retargeting_source_scale}
             self.args = update_args(self.args, args_user)
             self.cropper.update_config(self.args.__dict__)
             inference_cfg = self.live_portrait_wrapper.inference_cfg
@@ -366,11 +372,11 @@ class GradioPipeline(LivePortraitPipeline):
             raise gr.Error("Please upload a source portrait as the retargeting input 🤗🤗🤗")
 
     @torch.no_grad()
-    def init_retargeting_image(self, retargeting_source_scale: float, source_eye_ratio: float, source_lip_ratio:float, input_image = None):
+    def init_retargeting_image(self, source_face_index: int, retargeting_source_scale: float, source_eye_ratio: float, source_lip_ratio:float, input_image = None):
         """ initialize the retargeting slider
         """
         if input_image != None:
-            args_user = {'scale': retargeting_source_scale}
+            args_user = {'source_face_index': source_face_index, 'scale': retargeting_source_scale}
             self.args = update_args(self.args, args_user)
             self.cropper.update_config(self.args.__dict__)
             # inference_cfg = self.live_portrait_wrapper.inference_cfg
@@ -390,13 +396,13 @@ class GradioPipeline(LivePortraitPipeline):
             return source_eye_ratio, source_lip_ratio
 
     @torch.no_grad()
-    def execute_video_retargeting(self, input_lip_ratio: float, input_video, retargeting_source_scale: float, driving_smooth_observation_variance_retargeting: float, flag_do_crop_input_retargeting_video=True):
+    def execute_video_retargeting(self, input_lip_ratio: float, input_video, source_face_index: int, retargeting_source_scale: float, driving_smooth_observation_variance_retargeting: float, flag_do_crop_input_retargeting_video=True):
         """ retargeting the lip-open ratio of each source frame
         """
         # disposable feature
         device = self.live_portrait_wrapper.device
         f_s_user_lst, x_s_user_lst, source_lmk_crop_lst, source_M_c2o_lst, mask_ori_lst, source_rgb_lst, img_crop_256x256_lst, lip_delta_retargeting_lst_smooth, source_fps, n_frames = \
-            self.prepare_retargeting_video(input_video, retargeting_source_scale, device, input_lip_ratio, driving_smooth_observation_variance_retargeting, flag_do_crop=flag_do_crop_input_retargeting_video)
+            self.prepare_retargeting_video(input_video, source_face_index, retargeting_source_scale, device, input_lip_ratio, driving_smooth_observation_variance_retargeting, flag_do_crop=flag_do_crop_input_retargeting_video)
 
         if input_lip_ratio is None:
             raise gr.Error("Invalid ratio input 💥!")
@@ -455,12 +461,12 @@ class GradioPipeline(LivePortraitPipeline):
             return wfp_concat, wfp
 
     @torch.no_grad()
-    def prepare_retargeting_video(self, input_video, retargeting_source_scale, device, input_lip_ratio, driving_smooth_observation_variance_retargeting, flag_do_crop=True):
+    def prepare_retargeting_video(self, input_video, source_face_index, retargeting_source_scale, device, input_lip_ratio, driving_smooth_observation_variance_retargeting, flag_do_crop=True):
         """ for video retargeting
         """
         if input_video is not None:
             # gr.Info("Upload successfully!")
-            args_user = {'scale': retargeting_source_scale}
+            args_user = {'source_face_index': source_face_index, 'scale': retargeting_source_scale}
             self.args = update_args(self.args, args_user)
             self.cropper.update_config(self.args.__dict__)
             inference_cfg = self.live_portrait_wrapper.inference_cfg

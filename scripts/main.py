@@ -160,7 +160,7 @@ def on_ui_tabs():
         return pipeline.execute_video(*args, **kwargs)
 
     def reset_sliders(*args, **kwargs):
-        return 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.5, True, True
+        return 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.5, True, True
 
     # assets
     title_md = repo_root / "assets/gradio/gradio_title.md"
@@ -282,6 +282,7 @@ def on_ui_tabs():
                     with gr.Accordion(open=True, label="Cropping Options for Source Image or Video"):
                         with gr.Row():
                             flag_do_crop_input = gr.Checkbox(value=True, label="do crop (source)")
+                            source_face_index = gr.Number(value=0, label="source face index", minimum=0, maximum=999, step=1)
                             scale = gr.Number(value=2.3, label="source crop scale", minimum=1.8, maximum=3.2, step=0.05)
                             vx_ratio = gr.Number(value=0.0, label="source crop x", minimum=-0.5, maximum=0.5, step=0.01)
                             vy_ratio = gr.Number(value=-0.125, label="source crop y", minimum=-0.5, maximum=0.5, step=0.01)
@@ -326,6 +327,7 @@ def on_ui_tabs():
                     with gr.Accordion(open=True, label="Cropping Options for Driving Video"):
                         with gr.Row():
                             flag_crop_driving_video_input = gr.Checkbox(value=False, label="do crop (driving)")
+                            driving_face_index = gr.Number(value=0, label="driving face index", minimum=0, maximum=999, step=1)
                             scale_crop_driving_video = gr.Number(value=2.2, label="driving crop scale", minimum=1.8, maximum=3.2, step=0.05)
                             vx_ratio_crop_driving_video = gr.Number(value=0.0, label="driving crop x", minimum=-0.5, maximum=0.5, step=0.01)
                             vy_ratio_crop_driving_video = gr.Number(value=-0.1, label="driving crop y", minimum=-0.5, maximum=0.5, step=0.01)
@@ -399,6 +401,7 @@ def on_ui_tabs():
             with gr.Row(visible=True):
                 flag_do_crop_input_retargeting_image = gr.Checkbox(value=True, label="do crop (source)")
                 flag_stitching_retargeting_input = gr.Checkbox(value=True, label="stitching")
+                face_index = gr.Number(value=0, label="face index", minimum=0, maximum=999, step=1)
                 retargeting_source_scale.render()
                 eye_retargeting_slider.render()
                 lip_retargeting_slider.render()
@@ -435,7 +438,7 @@ def on_ui_tabs():
                     outputs=[
                         head_pitch_slider, head_yaw_slider, head_roll_slider, mov_x, mov_y, mov_z,
                         lip_variation_zero, lip_variation_one, lip_variation_two, lip_variation_three, smile, wink, eyebrow, eyeball_direction_x, eyeball_direction_y,
-                        retargeting_source_scale, flag_stitching_retargeting_input, flag_do_crop_input_retargeting_image
+                        face_index, retargeting_source_scale, flag_stitching_retargeting_input, flag_do_crop_input_retargeting_image
                     ]
                 )
             with gr.Row(visible=True):
@@ -477,6 +480,7 @@ def on_ui_tabs():
             gr.Markdown(load_description(repo_root / "assets/gradio/gradio_description_retargeting_video.md"), visible=True)
             with gr.Row(visible=True):
                 flag_do_crop_input_retargeting_video = gr.Checkbox(value=True, label="do crop (source)")
+                video_face_index = gr.Number(value=0, label="face index", minimum=0, maximum=999, step=1)
                 video_retargeting_source_scale.render()
                 video_lip_retargeting_slider.render()
                 driving_smooth_observation_variance_retargeting.render()
@@ -530,9 +534,11 @@ def on_ui_tabs():
                     driving_multiplier,
                     flag_crop_driving_video_input,
                     flag_video_editing_head_rotation,
+                    source_face_index,
                     scale,
                     vx_ratio,
                     vy_ratio,
+                    driving_face_index,
                     scale_crop_driving_video,
                     vx_ratio_crop_driving_video,
                     vy_ratio_crop_driving_video,
@@ -546,7 +552,7 @@ def on_ui_tabs():
 
             retargeting_input_image.change(
                 fn=gpu_wrapped_init_retargeting_image,
-                inputs=[retargeting_source_scale, eye_retargeting_slider, lip_retargeting_slider, retargeting_input_image],
+                inputs=[face_index, retargeting_source_scale, eye_retargeting_slider, lip_retargeting_slider, retargeting_input_image],
                 outputs=[eye_retargeting_slider, lip_retargeting_slider]
             )
 
@@ -558,14 +564,14 @@ def on_ui_tabs():
                     inputs=[
                         eye_retargeting_slider, lip_retargeting_slider, head_pitch_slider, head_yaw_slider, head_roll_slider, mov_x, mov_y, mov_z,
                         lip_variation_zero, lip_variation_one, lip_variation_two, lip_variation_three, smile, wink, eyebrow, eyeball_direction_x, eyeball_direction_y,
-                        retargeting_input_image, retargeting_source_scale, flag_stitching_retargeting_input, flag_do_crop_input_retargeting_image
+                        retargeting_input_image, face_index, retargeting_source_scale, flag_stitching_retargeting_input, flag_do_crop_input_retargeting_image
                     ],
                     outputs=[retargeting_output_image, retargeting_output_image_paste_back],
                 )
 
             process_button_retargeting_video.click(
                 fn=gpu_wrapped_execute_video_retargeting,
-                inputs=[video_lip_retargeting_slider, retargeting_input_video, video_retargeting_source_scale, driving_smooth_observation_variance_retargeting, flag_do_crop_input_retargeting_video],
+                inputs=[video_lip_retargeting_slider, retargeting_input_video, video_face_index, video_retargeting_source_scale, driving_smooth_observation_variance_retargeting, flag_do_crop_input_retargeting_video],
                 outputs=[output_video, output_video_paste_back],
                 show_progress='full'
             )

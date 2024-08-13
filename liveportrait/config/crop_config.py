@@ -47,3 +47,6 @@ class CropConfig(PrintableConfig):
     face_alignment_detector: Literal['blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
     face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
     face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
+    ########## face index ##########
+    source_face_index: int = 0  # source image or video face index
+    driving_face_index: int = 0  # driving video face index

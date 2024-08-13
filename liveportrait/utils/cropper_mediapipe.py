@@ -97,11 +97,14 @@ class Cropper(object):
             if src_face is None or len(src_face) == 0:
                 log("No face detected in the source image.")
                 return None
+            elif len(src_face) <= crop_cfg.source_face_index:
+                log(f"Only {len(src_face)} faces were detected in the source image. Cannot pick face with index {crop_cfg.source_face_index}.")
+                return None
             elif len(src_face) > 1:
-                log(f"More than one face detected in the image, only pick one face.")
+                log(f"More than one face detected in the image, only pick one face using face index {crop_cfg.source_face_index}.")
 
             # NOTE: temporarily only pick the first face, to support multiple face in the future
-            src_face = src_face[0]
+            src_face = src_face[crop_cfg.source_face_index]
 
             lmk = self.extract_lkm_from_landmarks(img_rgb, src_face)
         else:
@@ -165,9 +168,12 @@ class Cropper(object):
                 if src_face is None or len(src_face) == 0:
                     log(f"No face detected in the frame #{idx}")
                     continue
+                elif len(src_face) <= crop_cfg.source_face_index:
+                    log(f"Only {len(src_face)} faces were detected in the source frame #{idx}. Cannot pick face with index {crop_cfg.source_face_index}.")
+                    continue
                 elif len(src_face) > 1:
-                    log(f"More than one face detected in the source frame_{idx}, only pick one face.")
-                src_face = src_face[0]
+                    log(f"More than one face detected in the source frame_{idx}, only pick one face using face index {crop_cfg.source_face_index}.")
+                src_face = src_face[crop_cfg.source_face_index]
                 lmk = self.extract_lkm_from_landmarks(frame_rgb, src_face)
                 lmk = self.human_landmark_runner.run(frame_rgb, lmk)
                 trajectory.start, trajectory.end = idx, idx
@@ -214,9 +220,12 @@ class Cropper(object):
                 if src_face is None or len(src_face) == 0:
                     log(f"No face detected in the frame #{idx}")
                     continue
+                elif len(src_face) <= self.crop_cfg.driving_face_index:
+                    log(f"Only {len(src_face)} faces were detected in the driving frame #{idx}. Cannot pick face with index {self.crop_cfg.driving_face_index}.")
+                    continue
                 elif len(src_face) > 1:
-                    log(f"More than one face detected in the driving frame_{idx}, only pick one face.")
-                src_face = src_face[0]
+                    log(f"More than one face detected in the driving frame_{idx}, only pick one face using face index {self.crop_cfg.driving_face_index}.")
+                src_face = src_face[self.crop_cfg.driving_face_index]
                 lmk = self.extract_lkm_from_landmarks(frame_rgb, src_face)
                 lmk = self.human_landmark_runner.run(frame_rgb, lmk)
                 trajectory.start, trajectory.end = idx, idx

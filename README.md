@@ -92,6 +92,8 @@ Parameters are the same as LivePortrait ones (see output of command `python infe
 - `face_alignment_detector`: `blazeface`, `blazeface_back_camera` or `sfd`. Face detector to be used by human inference when Face Alignment is selected as `human_face_detector`. Default to the `Face alignment detector` UI setting if defined or `blazeface_back_camera` if not set neither in settings nor in endpoint body.
 - `face_alignment_detector_device`: `cuda`, `cpu` or `mps`. Device to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `cuda`.
 - `face_alignment_detector_dtype`: `fp16`, `bf16` or `fp32`. Device type to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `fp16`.
+- `source_face_index`: Face index (0-based) to be cropped in the source image or video if `flag_do_crop` is set to `True`.
+- `driving_face_index`: Face index (0-based) to be cropped in the driving video if `flag_crop_driving_video` is set to `True`.
 
 Additional parameters for the `/live-portrait/human/retargeting/image` endpoint are:
 - `retargeting_options`: an array of objects with the following arguments:

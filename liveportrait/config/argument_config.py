@@ -46,3 +46,7 @@ class ArgumentConfig(PrintableConfig):
     scale_crop_driving_video: float = 2.2  # scale factor for cropping driving video
     vx_ratio_crop_driving_video: float = 0.  # adjust y offset
     vy_ratio_crop_driving_video: float = -0.1  # adjust x offset
+    
+    ########## face index ##########
+    source_face_index: int = 0  # source image or video face index
+    driving_face_index: int = 0  # driving video face index
