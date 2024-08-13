@@ -472,7 +472,6 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
 
     class LivePortraitCommonRetargetingRequest(BaseModel):
         source: str = ""  # path to the source portrait or base64 encoded one
-        source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
         use_model_cache: bool = True
 
         ########## source crop arguments ##########
@@ -489,7 +488,8 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         source_face_index: int = 0  # source image or video face index
 
 
-    class LivePortraitImageRetargetingRequest(LivePortraitCommonRetargetingRequest):        
+    class LivePortraitImageRetargetingRequest(LivePortraitCommonRetargetingRequest):
+        source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
         output_dir: str = 'outputs/live-portrait/'  # directory to save output video
         send_output: bool = True
         save_output: bool = False
@@ -601,6 +601,8 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
 
 
     class LivePortraitImageRetargetingInitRequest(LivePortraitCommonRetargetingRequest):
+        source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
+
         ########## retargeting arguments ##########
         eye_ratio: float = 0  # target eyes-open ratio (0 -> 0.8)
         lip_ratio: float = 0  # target lip-open ratio (0 -> 0.8)
@@ -656,6 +658,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
 
     
     class LivePortraitVideoRetargetingRequest(LivePortraitCommonRetargetingRequest):
+        source_file_extension: str = ".mp4"  # source file extension if source is a base64 encoded string or url
         output_dir: str = 'outputs/live-portrait/'  # directory to save output video
         send_output: bool = True
         save_output: bool = False
