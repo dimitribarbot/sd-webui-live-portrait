@@ -222,7 +222,7 @@ class LivePortraitPipeline(object):
             if inf_cfg.flag_do_crop:
                 crop_info = self.cropper.crop_source_image(source_rgb_lst[0], crop_cfg)
                 if crop_info is None:
-                    raise Exception("No face detected in the source image!")
+                    raise Exception("No face detected in the source image or wrong source face index provided!")
                 source_lmk = crop_info['lmk_crop']
                 img_crop_256x256 = crop_info['img_crop_256x256']
             else:

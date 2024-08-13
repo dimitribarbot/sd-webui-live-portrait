@@ -203,11 +203,11 @@ class GradioPipeline(LivePortraitPipeline):
                 'driving_multiplier': driving_multiplier,
                 'flag_crop_driving_video': flag_crop_driving_video_input,
                 'flag_video_editing_head_rotation': flag_video_editing_head_rotation,
-                'source_face_index': source_face_index,
+                'source_face_index': int(source_face_index),
                 'scale': scale,
                 'vx_ratio': vx_ratio,
                 'vy_ratio': vy_ratio,
-                'driving_face_index': driving_face_index,
+                'driving_face_index': int(driving_face_index),
                 'scale_crop_driving_video': scale_crop_driving_video,
                 'vx_ratio_crop_driving_video': vx_ratio_crop_driving_video,
                 'vy_ratio_crop_driving_video': vy_ratio_crop_driving_video,
@@ -245,7 +245,7 @@ class GradioPipeline(LivePortraitPipeline):
         eyeball_direction_x: float,
         eyeball_direction_y: float,
         input_image,
-        source_face_index: int,
+        source_face_index: float,
         retargeting_source_scale: float,
         flag_stitching_retargeting_input=True,
         flag_do_crop_input_retargeting_image=True):
@@ -341,7 +341,7 @@ class GradioPipeline(LivePortraitPipeline):
         """
         if input_image is not None:
             # gr.Info("Upload successfully!")
-            args_user = {'source_face_index': source_face_index, 'scale': retargeting_source_scale}
+            args_user = {'source_face_index': int(source_face_index), 'scale': retargeting_source_scale}
             self.args = update_args(self.args, args_user)
             self.cropper.update_config(self.args.__dict__)
             inference_cfg = self.live_portrait_wrapper.inference_cfg
@@ -372,11 +372,11 @@ class GradioPipeline(LivePortraitPipeline):
             raise gr.Error("Please upload a source portrait as the retargeting input 🤗🤗🤗")
 
     @torch.no_grad()
-    def init_retargeting_image(self, source_face_index: int, retargeting_source_scale: float, source_eye_ratio: float, source_lip_ratio:float, input_image = None):
+    def init_retargeting_image(self, source_face_index: float, retargeting_source_scale: float, source_eye_ratio: float, source_lip_ratio:float, input_image = None):
         """ initialize the retargeting slider
         """
         if input_image != None:
-            args_user = {'source_face_index': source_face_index, 'scale': retargeting_source_scale}
+            args_user = {'source_face_index': int(source_face_index), 'scale': retargeting_source_scale}
             self.args = update_args(self.args, args_user)
             self.cropper.update_config(self.args.__dict__)
             # inference_cfg = self.live_portrait_wrapper.inference_cfg
@@ -396,7 +396,7 @@ class GradioPipeline(LivePortraitPipeline):
             return source_eye_ratio, source_lip_ratio
 
     @torch.no_grad()
-    def execute_video_retargeting(self, input_lip_ratio: float, input_video, source_face_index: int, retargeting_source_scale: float, driving_smooth_observation_variance_retargeting: float, flag_do_crop_input_retargeting_video=True):
+    def execute_video_retargeting(self, input_lip_ratio: float, input_video, source_face_index: float, retargeting_source_scale: float, driving_smooth_observation_variance_retargeting: float, flag_do_crop_input_retargeting_video=True):
         """ retargeting the lip-open ratio of each source frame
         """
         # disposable feature
@@ -466,7 +466,7 @@ class GradioPipeline(LivePortraitPipeline):
         """
         if input_video is not None:
             # gr.Info("Upload successfully!")
-            args_user = {'source_face_index': source_face_index, 'scale': retargeting_source_scale}
+            args_user = {'source_face_index': int(source_face_index), 'scale': retargeting_source_scale}
             self.args = update_args(self.args, args_user)
             self.cropper.update_config(self.args.__dict__)
             inference_cfg = self.live_portrait_wrapper.inference_cfg
