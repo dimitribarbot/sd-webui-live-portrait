@@ -1,7 +1,6 @@
 import base64
 import datetime
 import imageio.v3 as iio
-import io
 import os
 import requests
 import shutil
@@ -152,8 +151,12 @@ def save_input_to_temp_file(input: str, input_extension: str, tmpdirname: str):
         raise HTTPException(status_code=500, detail="Invalid encoded input") from e
     
 
+def is_file(input):
+    return os.path.exists(input) or (type(input) is str and (input.startswith("http://") or input.startswith("https://")))
+    
+
 def get_input_extension(input, input_default_extension=None):
-    if os.path.exists(input) or (type(input) is str and (input.startswith("http://") or input.startswith("https://"))):
+    if is_file(input):
         _, file_extension = os.path.splitext(input)
         if file_extension:
             return file_extension.lower()
@@ -396,9 +399,11 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             argument_cfg.source = save_input_to_temp_file(payload.source, source_file_extension, tmpdirname)
             argument_cfg.driving = save_input_to_temp_file(payload.driving, driving_file_extension, tmpdirname)
 
+            source_tmp_name = basename(argument_cfg.source)
+            driving_tmp_name = basename(argument_cfg.driving)
             new_names_to_old_names = {
-                basename(argument_cfg.source): basename(payload.source),
-                basename(argument_cfg.driving): basename(payload.driving)
+                source_tmp_name: basename(payload.source) if is_file(payload.source) else "source",
+                driving_tmp_name: basename(payload.driving) if is_file(payload.driving) else "driving"
             }
 
             argument_cfg.output_dir = temp_output_dir
@@ -579,8 +584,10 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
 
                 suffix = "" if len(payload.retargeting_options) == 1 else f"_{option_index}"
 
-                wfp = os.path.join(temp_output_dir, f'{basename(payload.source)}_retargeting{suffix}{payload.source_file_extension}')
-                wfp_concat = os.path.join(temp_output_dir, f'{basename(payload.source)}_retargeting_cropped{suffix}{payload.source_file_extension}')
+                source_file_name = basename(payload.source) if is_file(payload.source) else "source"
+
+                wfp = os.path.join(temp_output_dir, f'{source_file_name}_retargeting{suffix}{payload.source_file_extension}')
+                wfp_concat = os.path.join(temp_output_dir, f'{source_file_name}_retargeting_cropped{suffix}{payload.source_file_extension}')
                 cv2.imwrite(wfp, cv2.cvtColor(out_to_ori_blend, cv2.COLOR_BGR2RGB))
                 cv2.imwrite(wfp_concat, cv2.cvtColor(out, cv2.COLOR_BGR2RGB))
 
@@ -689,8 +696,9 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
 
             argument_cfg.source = save_input_to_temp_file(payload.source, source_file_extension, tmpdirname)
 
+            source_tmp_name = basename(argument_cfg.source)
             new_names_to_old_names = {
-                basename(argument_cfg.source): basename(payload.source)
+                source_tmp_name: basename(payload.source) if is_file(payload.source) else "source"
             }
 
             argument_cfg.output_dir = temp_output_dir
@@ -763,9 +771,11 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             argument_cfg.source = save_input_to_temp_file(payload.source, source_file_extension, tmpdirname)
             argument_cfg.driving = save_input_to_temp_file(payload.driving, driving_file_extension, tmpdirname)
 
+            source_tmp_name = basename(argument_cfg.source)
+            driving_tmp_name = basename(argument_cfg.driving)
             new_names_to_old_names = {
-                basename(argument_cfg.source): basename(payload.source),
-                basename(argument_cfg.driving): basename(payload.driving)
+                source_tmp_name: basename(payload.source) if is_file(payload.source) else "source",
+                driving_tmp_name: basename(payload.driving) if is_file(payload.driving) else "driving"
             }
 
             argument_cfg.output_dir = temp_output_dir

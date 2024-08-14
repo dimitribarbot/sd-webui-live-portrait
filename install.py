@@ -5,7 +5,6 @@ from importlib import metadata
 from pathlib import Path
 from typing import Optional
 from packaging.version import parse
-from modules.modelloader import load_file_from_url
 import subprocess
 
 from internal_liveportrait.utils import is_valid_cuda_version, isMacOS
