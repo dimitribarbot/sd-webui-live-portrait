@@ -50,6 +50,8 @@ def init_live_portrait_pipeline(inference_cfg: InferenceConfig, crop_cfg: CropCo
             crop_cfg=crop_cfg
         )
     if not live_portrait_pipeline or live_portrait_pipeline.cropper.crop_cfg.model != crop_cfg.model or \
+        live_portrait_pipeline.cropper.crop_cfg.flag_force_cpu != crop_cfg.flag_force_cpu or \
+        live_portrait_pipeline.cropper.crop_cfg.device_id != crop_cfg.device_id or \
         (crop_cfg.model == "facealignment" and (live_portrait_pipeline.cropper.crop_cfg.face_alignment_detector != crop_cfg.face_alignment_detector \
                                                 or live_portrait_pipeline.cropper.crop_cfg.face_alignment_detector_device != crop_cfg.face_alignment_detector_device
                                                 or live_portrait_pipeline.cropper.crop_cfg.face_alignment_detector_dtype != crop_cfg.face_alignment_detector_dtype)):
@@ -73,6 +75,8 @@ def init_live_portrait_animal_pipeline(inference_cfg: InferenceConfig, crop_cfg:
             crop_cfg=crop_cfg
         )
     if not live_portrait_pipeline_animal or live_portrait_pipeline_animal.cropper.crop_cfg.model != crop_cfg.model or \
+        live_portrait_pipeline_animal.cropper.crop_cfg.flag_force_cpu != crop_cfg.flag_force_cpu or \
+        live_portrait_pipeline_animal.cropper.crop_cfg.device_id != crop_cfg.device_id or \
         (crop_cfg.model == "facealignment" and (live_portrait_pipeline_animal.cropper.crop_cfg.face_alignment_detector != crop_cfg.face_alignment_detector \
                                                 or live_portrait_pipeline_animal.cropper.crop_cfg.face_alignment_detector_device != crop_cfg.face_alignment_detector_device
                                                 or live_portrait_pipeline_animal.cropper.crop_cfg.face_alignment_detector_dtype != crop_cfg.face_alignment_detector_dtype)):
@@ -97,6 +101,8 @@ def init_retargeting_pipeline(inference_cfg: InferenceConfig, crop_cfg: CropConf
             args=argument_cfg
         )
     if not retargeting_pipeline or retargeting_pipeline.cropper.crop_cfg.model != crop_cfg.model or \
+        retargeting_pipeline.cropper.crop_cfg.flag_force_cpu != crop_cfg.flag_force_cpu or \
+        retargeting_pipeline.cropper.crop_cfg.device_id != crop_cfg.device_id or \
         (crop_cfg.model == "facealignment" and (retargeting_pipeline.cropper.crop_cfg.face_alignment_detector != crop_cfg.face_alignment_detector \
                                                 or retargeting_pipeline.cropper.crop_cfg.face_alignment_detector_device != crop_cfg.face_alignment_detector_device
                                                 or retargeting_pipeline.cropper.crop_cfg.face_alignment_detector_dtype != crop_cfg.face_alignment_detector_dtype)):
