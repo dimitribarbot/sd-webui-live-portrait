@@ -149,6 +149,7 @@ class GradioPipeline(LivePortraitPipeline):
         input_source_image_path=None,
         input_source_video_path=None,
         input_driving_video_pickle_path=None,
+        input_driving_video_webcam_path=None,
         input_driving_video_path=None,
         flag_relative_input=True,
         flag_do_crop_input=True,
@@ -181,13 +182,15 @@ class GradioPipeline(LivePortraitPipeline):
 
         if v_tab_selection == 'Video':
             input_driving_path = input_driving_video_path
+        elif v_tab_selection == 'Webcam':
+            input_driving_path = input_driving_video_webcam_path
         elif v_tab_selection == 'Pickle':
             input_driving_path = input_driving_video_pickle_path.name
         else:
             input_driving_path = input_driving_video_path
 
         if input_source_path is not None and input_driving_path is not None:
-            if osp.exists(input_driving_path) and v_tab_selection == 'Video' and is_square_video(input_driving_path) is False:
+            if osp.exists(input_driving_path) and (v_tab_selection == 'Video' or v_tab_selection == 'Webcam') and is_square_video(input_driving_path) is False:
                 flag_crop_driving_video_input = True
                 log("The driving video is not square, it will be cropped to square automatically.")
                 gr.Info("The driving video is not square, it will be cropped to square automatically.")

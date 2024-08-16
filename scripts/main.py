@@ -305,6 +305,9 @@ def on_ui_tabs():
                                     inputs=[driving_video_input],
                                     cache_examples=False,
                                 )
+                        with gr.TabItem("📷 Driving Webcam") as v_tab_webcam:
+                            with gr.Accordion(open=True, label="Driving Webcam"):
+                                driving_video_webcam_input = gr.Video(format="mp4", include_audio=False)
                         with gr.TabItem("📁 Driving Pickle") as v_tab_pickle:
                             with gr.Accordion(open=True, label="Driving Pickle"):
                                 driving_video_pickle_input = gr.File(type="file", file_types=[".pkl"])
@@ -322,6 +325,7 @@ def on_ui_tabs():
 
                         v_tab_selection = gr.Textbox(visible=False)
                         v_tab_pickle.select(lambda: "Pickle", None, v_tab_selection)
+                        v_tab_webcam.select(lambda: ("Webcam", gr.Video.update(source="webcam")), None, [v_tab_selection, driving_video_webcam_input])
                         v_tab_video.select(lambda: "Video", None, v_tab_selection)
                     # with gr.Accordion(open=False, label="Animation Instructions"):
                         # gr.Markdown(load_description(repo_root / "assets/gradio/gradio_description_animation.md"))
@@ -526,6 +530,7 @@ def on_ui_tabs():
                     source_image_input,
                     source_video_input,
                     driving_video_pickle_input,
+                    driving_video_webcam_input,
                     driving_video_input,
                     flag_relative_input,
                     flag_do_crop_input,
