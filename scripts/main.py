@@ -149,7 +149,8 @@ def on_ui_tabs():
 
     def gpu_wrapped_execute_image_retargeting(*args, **kwargs):
         pipeline = init_gradio_pipeline()
-        return pipeline.execute_image_retargeting(*args, **kwargs)
+        out, out_to_ori_blend = pipeline.execute_image_retargeting(*args, **kwargs)
+        return [out], [out_to_ori_blend]
 
     def gpu_wrapped_execute_video_retargeting(*args, **kwargs):
         pipeline = init_gradio_pipeline()
@@ -221,8 +222,8 @@ def on_ui_tabs():
     retargeting_input_video = gr.Video()
     output_image = gr.Image(type="numpy")
     output_image_paste_back = gr.Image(type="numpy")
-    retargeting_output_image = gr.Image(type="numpy")
-    retargeting_output_image_paste_back = gr.Image(type="numpy")
+    retargeting_output_image = gr.Gallery(preview=True, selected_index=0, object_fit="contain")
+    retargeting_output_image_paste_back = gr.Gallery(preview=True, selected_index=0, object_fit="contain", height=512)
     output_video = gr.Video(autoplay=False)
     output_video_paste_back = gr.Video(autoplay=False)
     output_video_i2v = gr.Video(autoplay=False)
