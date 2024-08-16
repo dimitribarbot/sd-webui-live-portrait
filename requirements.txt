@@ -1,7 +1,7 @@
 imageio-ffmpeg>=0.5.1
 mediapipe
 numpy<=1.26.4
-onnx>=1.14.0
+onnx<=1.16.1
 opencv-python
 pykalman
 pyyaml
