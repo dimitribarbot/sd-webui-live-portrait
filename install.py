@@ -97,14 +97,16 @@ def install_xpose():
     op_lib = os.path.join(op_root, "lib")
     if not os.path.exists(op_build) or len(os.listdir(op_build)) == 0:
         print("Building sd-webui-live-portrait requirement: XPose", flush=True)
-        subprocess.run([sys.executable, "setup.py", "build"], cwd=op_root, capture_output=True, shell=False)
+        if os.path.exists(op_lib):
+            shutil.rmtree(op_lib)
+        subprocess.run([sys.executable, "setup.py", "build"], cwd=op_root, check=True)
     if not os.path.exists(op_lib) or len(os.listdir(op_lib)) == 0:
         print("Installing sd-webui-live-portrait requirement: XPose", flush=True)
         if not os.path.exists(op_lib):
             os.makedirs(op_lib, exist_ok=True)
         lib_src = Path(op_build)
         lib_dst = Path(op_lib)
-        for lib_file in lib_src.rglob("*.so"):
+        for lib_file in lib_src.rglob("MultiScaleDeformableAttention*"):
             shutil.copy2(lib_file, lib_dst)
 
 

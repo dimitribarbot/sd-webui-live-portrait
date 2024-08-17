@@ -14,6 +14,7 @@ __pycache__/
 
 # XPose build files
 liveportrait/utils/dependencies/XPose/models/UniPose/ops/build
+liveportrait/utils/dependencies/XPose/models/UniPose/ops/lib
 liveportrait/utils/dependencies/XPose/models/UniPose/ops/dist
 liveportrait/utils/dependencies/XPose/models/UniPose/ops/MultiScaleDeformableAttention.egg-info
 
