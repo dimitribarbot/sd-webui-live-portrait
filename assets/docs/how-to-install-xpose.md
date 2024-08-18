@@ -13,7 +13,7 @@ First, you need to have the proper installation of the Microsoft Visual Studio B
 ![image](./install-msvc-17.8-0.png)
 
 > [!Note]
-> Note that if you have already a more recent version of the Build Tools (17.10 and above), you must first uninstall it as more recent versions are not compatible with CUDA Toolkit 11.8. Don't forget to check under any Visual Studio version you may have installed (you'll be able to reinstall more recent versions after XPpose installation).  
+> Note that if you have already a more recent version of the Build Tools (17.10 and above), you must first uninstall it as more recent versions are not compatible with CUDA Toolkit 11.8. Don't forget to check under any Visual Studio version you may have installed (you'll be able to reinstall more recent versions after XPose installation).  
 
 In the installation dialog, select "Desktop development with C++" as shown in the image below (ensure that the version to be installed is the correct one) and click "Install":
 
