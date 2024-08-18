@@ -14,7 +14,7 @@ from liveportrait.config.crop_config import CropConfig
 from liveportrait.config.inference_config import InferenceConfig
 from liveportrait.gradio_pipeline import GradioPipeline, GradioPipelineAnimal
 
-from internal_liveportrait.utils import download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, is_valid_cuda_version, isMacOS
+from internal_liveportrait.utils import download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, is_valid_torch_version, is_mac_os, has_xpose_lib
 
 
 repo_root = Path(__file__).parent.parent
@@ -583,10 +583,12 @@ def on_ui_tabs():
             )
             
         with gr.Tab("Animals"):
-            if isMacOS():
+            if is_mac_os():
                 gr.Markdown("Animal mode is not currently supported in MacOS.")
-            elif not is_valid_cuda_version():
+            elif not is_valid_torch_version():
                 gr.Markdown("Animal mode is not currently supported by pytorch version 2.1.x.")
+            elif not has_xpose_lib():
+                gr.Markdown("XPose model, necessary to generate animal videos, is not installed correctly. Try to reinstall this extension.")
             else:            
                 gr.HTML(load_description(title_md))
 

@@ -6,8 +6,26 @@ from pathlib import Path
 from typing import Optional
 from packaging.version import parse
 import subprocess
+import tempfile
 
-from internal_liveportrait.utils import is_valid_cuda_version, isMacOS
+from internal_liveportrait.utils import is_valid_torch_version, is_mac_os
+
+
+# Based on https://onnxruntime.ai/docs/reference/compatibility.html#onnx-opset-support
+onnx_to_onnx_runtime_versions = {
+    "1.16.1": "1.18",
+    "1.16.0": "1.18",
+    "1.15.0": "1.17",
+    "1.14.1": "1.16",
+    "1.14.0": "1.15",
+    "1.13.1": "1.14",
+    "1.13.0": "1.14",
+    "1.12.0": "1.13",
+    "1.11.0": "1.11",
+    "1.10.2": "1.10",
+    "1.10.1": "1.10",
+    "1.10.0": "1.10"
+}
 
 
 repo_root = Path(__file__).parent
@@ -79,8 +97,12 @@ def install_onnxruntime():
     if not launch.is_installed("onnxruntime") and not launch.is_installed("onnxruntime-gpu"):
         import torch.cuda as cuda # torch import head to improve loading time
         onnxruntime = 'onnxruntime-gpu' if cuda.is_available() else 'onnxruntime'
+        installed_onnx_version = get_installed_version("onnx")
+        if installed_onnx_version:
+            onnx_version = parse(installed_onnx_version)
+            onnxruntime_version = onnx_to_onnx_runtime_versions.get(onnx_version.base_version, None)
         launch.run_pip(
-            f'install {onnxruntime}',
+            f'install {f"{onnxruntime}=={onnxruntime_version}" if onnxruntime_version else onnxruntime}',
             f"sd-webui-live-portrait requirement: {onnxruntime}",
         )
 
@@ -89,25 +111,39 @@ def install_xpose():
     """
     Install XPose.
     """
-    if not is_valid_cuda_version() or isMacOS():
+    if not is_valid_torch_version() or is_mac_os():
         # XPose is incompatible with MacOS or torch version 2.1.x
         return
     op_root = os.path.join(repo_root, "liveportrait", "utils", "dependencies", "XPose", "models", "UniPose", "ops")
-    op_build = os.path.join(op_root, "build")
     op_lib = os.path.join(op_root, "lib")
-    if not os.path.exists(op_build) or len(os.listdir(op_build)) == 0:
-        print("Building sd-webui-live-portrait requirement: XPose", flush=True)
-        if os.path.exists(op_lib):
-            shutil.rmtree(op_lib)
-        subprocess.run([sys.executable, "setup.py", "build"], cwd=op_root, check=True)
     if not os.path.exists(op_lib) or len(os.listdir(op_lib)) == 0:
         print("Installing sd-webui-live-portrait requirement: XPose", flush=True)
         if not os.path.exists(op_lib):
             os.makedirs(op_lib, exist_ok=True)
-        lib_src = Path(op_build)
-        lib_dst = Path(op_lib)
-        for lib_file in lib_src.rglob("MultiScaleDeformableAttention*"):
-            shutil.copy2(lib_file, lib_dst)
+        op_logs = os.path.join(repo_root, "logs")
+        if not os.path.exists(op_logs):
+            os.makedirs(op_logs, exist_ok=True)
+        log_file = os.path.join(op_logs, "xpose.log")
+        log_err_file = os.path.join(op_logs, "xpose.err.log")
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            shutil.copytree(op_root, tmpdirname, dirs_exist_ok=True)
+            with open(log_file, 'w') as log_f, open(log_err_file, 'w') as log_err_f:
+                result = subprocess.run(
+                    [sys.executable, "setup.py", "build"],
+                    cwd=tmpdirname,
+                    env=os.environ,
+                    errors="ignore",
+                    stdout=log_f,
+                    stderr=log_err_f
+                )
+                if result.returncode > 0:
+                    print("Building of OP file for XPose has failed. Check the log file in the extension's 'logs' folder for more information.")
+                    return
+            op_build = os.path.join(tmpdirname, "build")
+            lib_src = Path(op_build)
+            lib_dst = Path(op_lib)
+            for lib_file in lib_src.rglob("MultiScaleDeformableAttention*"):
+                shutil.copy2(lib_file, lib_dst)
 
 
 install_requirements(main_req_file)

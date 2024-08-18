@@ -25,7 +25,7 @@ from liveportrait.live_portrait_pipeline import LivePortraitPipeline
 from liveportrait.live_portrait_pipeline_animal import LivePortraitPipelineAnimal
 from liveportrait.utils.helper import basename
 
-from internal_liveportrait.utils import download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, is_valid_cuda_version, isMacOS
+from internal_liveportrait.utils import download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, is_valid_torch_version, is_mac_os, has_xpose_lib
 
 
 temp_dir = make_abs_path('../../tmp')
@@ -755,10 +755,12 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
     @app.post("/live-portrait/animal")
     async def execute_animal(payload: LivePortraitRequest = Body(...)) -> Any:
         print("Live Portrait API /live-portrait/animal received request")
-        if isMacOS():
+        if is_mac_os():
             raise OSError("XPose model, necessary to generate animal videos, is incompatible with MacOS systems.")
-        if not is_valid_cuda_version():
+        if not is_valid_torch_version():
             raise SystemError("XPose model, necessary to generate animal videos, is incompatible with pytorch version 2.1.x.")
+        if not has_xpose_lib():
+            raise SystemError("XPose model, necessary to generate animal videos, is not installed correctly. Try to reinstall this extension.")
 
         fast_check_inference_args(payload)
         

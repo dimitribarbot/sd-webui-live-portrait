@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 from modules.modelloader import load_file_from_url
 try:
@@ -11,7 +12,10 @@ except:
         models_path = os.path.abspath("models")
 
 
-def is_valid_cuda_version():
+repo_root = Path(__file__).parent.parent
+
+
+def is_valid_torch_version():
     import torch.cuda as cuda
     if cuda.is_available():
         from torch.version import __version__
@@ -19,8 +23,13 @@ def is_valid_cuda_version():
     return False
 
 
-def isMacOS():
+def is_mac_os():
     return sys.platform.startswith('darwin')
+
+
+def has_xpose_lib():
+    xpose_lib_dir = os.path.join(repo_root, "liveportrait", "utils", "dependencies", "XPose", "models", "UniPose", "ops", "lib")
+    return os.path.exists(xpose_lib_dir) and len(os.listdir(xpose_lib_dir)) > 0
 
 
 def download_models(model_root, model_urls):
