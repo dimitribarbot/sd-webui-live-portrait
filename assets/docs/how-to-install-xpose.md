@@ -84,9 +84,9 @@ Open the `stable-diffusion-webui/webui-user.sh` file and make the following chan
 
 If you're using `xformers`, adjust or add the following lines (if you're not using `xformers`, remove the `--xformers` flag in `COMMANDLINE_ARGS` and remove the `XFORMERS_PACKAGE` line):
 ```
-set COMMANDLINE_ARGS=--skip-version-check --xformers
-set TORCH_COMMAND=pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
-set XFORMERS_PACKAGE=xformers==0.0.22
+export COMMANDLINE_ARGS="--skip-version-check --xformers"
+export TORCH_COMMAND="pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --extra-index-url https://download.pytorch.org/whl/cu118"
+export XFORMERS_PACKAGE="xformers==0.0.22"
 ```
 
 As we have downgraded the pytorch version, to avoid unnecessary warnings at each launch of Automatic1111, we add the `--skip-version-check` flag to the command line arguments.
