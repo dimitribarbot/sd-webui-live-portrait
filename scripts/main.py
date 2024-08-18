@@ -14,7 +14,9 @@ from liveportrait.config.crop_config import CropConfig
 from liveportrait.config.inference_config import InferenceConfig
 from liveportrait.gradio_pipeline import GradioPipeline, GradioPipelineAnimal
 
-from internal_liveportrait.utils import download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, is_valid_torch_version, is_mac_os, has_xpose_lib
+from internal_liveportrait.utils import \
+    download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, download_liveportrait_landmark_model, \
+    is_valid_torch_version, is_mac_os, has_xpose_lib
 
 
 repo_root = Path(__file__).parent.parent
@@ -127,7 +129,9 @@ def on_ui_tabs():
         if not gradio_pipeline_animal:
             clear_model_cache()
 
+            download_liveportrait_landmark_model()
             download_liveportrait_animals_models()
+            download_insightface_models()
 
             gradio_pipeline_animal = GradioPipelineAnimal(
                 inference_cfg=inference_cfg,

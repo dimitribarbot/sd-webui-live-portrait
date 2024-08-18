@@ -25,7 +25,9 @@ from liveportrait.live_portrait_pipeline import LivePortraitPipeline
 from liveportrait.live_portrait_pipeline_animal import LivePortraitPipelineAnimal
 from liveportrait.utils.helper import basename
 
-from internal_liveportrait.utils import download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, is_valid_torch_version, is_mac_os, has_xpose_lib
+from internal_liveportrait.utils import \
+    download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, download_liveportrait_landmark_model, \
+        is_valid_torch_version, is_mac_os, has_xpose_lib
 
 
 temp_dir = make_abs_path('../../tmp')
@@ -788,7 +790,9 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
 
             argument_cfg.output_dir = temp_output_dir
 
+            download_liveportrait_landmark_model()
             download_liveportrait_animals_models()
+            download_insightface_models()
 
             live_portrait_pipeline_animal = init_live_portrait_animal_pipeline(
                 inference_cfg,
