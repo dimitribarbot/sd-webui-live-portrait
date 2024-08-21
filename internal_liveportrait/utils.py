@@ -17,7 +17,6 @@ except:
 
 IS_WINDOWS = sys.platform == 'win32'
 IS_MACOS = sys.platform.startswith('darwin')
-SUBPROCESS_DECODE_ARGS = ('oem',) if IS_WINDOWS else ()
 
 # A map keyed by get_platform() return values to values accepted by
 # 'vcvarsall.bat'. Always cross-compile from x86 to work with the
