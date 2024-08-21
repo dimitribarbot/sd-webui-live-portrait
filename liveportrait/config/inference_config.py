@@ -7,6 +7,7 @@ config dataclass used for inference
 import os
 import cv2
 from numpy import ndarray
+import pickle as pkl
 from dataclasses import dataclass, field
 from typing import Literal, Tuple
 from .base_config import PrintableConfig, make_abs_path
@@ -18,6 +19,11 @@ except:
         from modules.paths import models_path
     except:
         models_path = os.path.abspath("models")
+
+
+def load_lip_array():
+    with open(make_abs_path('../utils/resources/lip_array.pkl'), 'rb') as f:
+        return pkl.load(f)
 
 
 @dataclass(repr=False)  # use repr from PrintableConfig
@@ -43,7 +49,6 @@ class InferenceConfig(PrintableConfig):
     device_id: int = 0
     flag_normalize_lip: bool = True
     flag_source_video_eye_retargeting: bool = False
-    flag_video_editing_head_rotation: bool = False
     flag_eye_retargeting: bool = False
     flag_lip_retargeting: bool = False
     flag_stitching: bool = True
@@ -58,6 +63,7 @@ class InferenceConfig(PrintableConfig):
     driving_smooth_observation_variance: float = 3e-7 # smooth strength scalar for the animated video when the input is a source video, the larger the number, the smoother the animated video; too much smoothness would result in loss of motion accuracy
     source_max_dim: int = 1280 # the max dim of height and width of source image or video
     source_division: int = 2 # make sure the height and width of source image or video can be divided by this number
+    animation_region: Literal["exp", "pose", "lip", "eyes", "all"] = "all" # the region where the animation was performed, "exp" means the expression, "pose" means the head pose
 
     # NOT EXPORTED PARAMS
     lip_normalize_threshold: float = 0.03 # threshold for flag_normalize_lip
@@ -70,4 +76,5 @@ class InferenceConfig(PrintableConfig):
     output_fps: int = 25 # default output fps
 
     mask_crop: ndarray = field(default_factory=lambda: cv2.imread(make_abs_path('../utils/resources/mask_template.png'), cv2.IMREAD_COLOR))
+    lip_array: ndarray = field(default_factory=load_lip_array)
     size_gif: int = 256 # default gif size, TO IMPLEMENT

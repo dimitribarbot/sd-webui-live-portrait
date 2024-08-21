@@ -112,6 +112,7 @@ Additional parameters for the `/live-portrait/human/retargeting/video` endpoint 
 - `lip_ratio`: target lip-open ratio (0 -> 0.8)
 - `retargeting_source_scale`: the ratio of face area is smaller if scale is larger
 - `driving_smooth_observation_variance_retargeting`: motion smooth strength
+- `video_retargeting_silence`: whether to keep the lip silent
 - `flag_do_crop_input_retargeting_video`: whether to crop the source video to the face-cropping space
 
 ## Thanks

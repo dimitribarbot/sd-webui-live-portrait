@@ -180,12 +180,12 @@ def on_ui_tabs():
         [osp.join(example_portrait_dir, "s2.jpg"), osp.join(example_video_dir, "d13.mp4"), True, True, True, True],
     ]
     data_examples_v2v = [
-        [osp.join(example_portrait_dir, "s13.mp4"), osp.join(example_video_dir, "d0.mp4"), True, True, True, False, False, 3e-7],
-        # [osp.join(example_portrait_dir, "s14.mp4"), osp.join(example_video_dir, "d18.mp4"), True, True, True, False, False, 3e-7],
-        # [osp.join(example_portrait_dir, "s15.mp4"), osp.join(example_video_dir, "d19.mp4"), True, True, True, False, False, 3e-7],
-        [osp.join(example_portrait_dir, "s18.mp4"), osp.join(example_video_dir, "d6.mp4"), True, True, True, False, False, 3e-7],
-        # [osp.join(example_portrait_dir, "s19.mp4"), osp.join(example_video_dir, "d6.mp4"), True, True, True, False, False, 3e-7],
-        [osp.join(example_portrait_dir, "s20.mp4"), osp.join(example_video_dir, "d0.mp4"), True, True, True, False, False, 3e-7],
+        [osp.join(example_portrait_dir, "s13.mp4"), osp.join(example_video_dir, "d0.mp4"), True, True, True, False, 3e-7],
+        # [osp.join(example_portrait_dir, "s14.mp4"), osp.join(example_video_dir, "d18.mp4"), True, True, True, False, 3e-7],
+        # [osp.join(example_portrait_dir, "s15.mp4"), osp.join(example_video_dir, "d19.mp4"), True, True, True, False, 3e-7],
+        [osp.join(example_portrait_dir, "s18.mp4"), osp.join(example_video_dir, "d6.mp4"), True, True, True, False, 3e-7],
+        # [osp.join(example_portrait_dir, "s19.mp4"), osp.join(example_video_dir, "d6.mp4"), True, True, True, False, 3e-7],
+        [osp.join(example_portrait_dir, "s20.mp4"), osp.join(example_video_dir, "d0.mp4"), True, True, True, False, 3e-7],
     ]
     data_examples_i2v_animal = [
         [osp.join(example_portrait_dir, "s41.jpg"), osp.join(example_video_dir, "d3.mp4"), True, False, False, False],
@@ -204,6 +204,7 @@ def on_ui_tabs():
     retargeting_source_scale = gr.Number(minimum=1.8, maximum=3.2, value=2.5, step=0.05, label="crop scale")
     video_retargeting_source_scale = gr.Number(minimum=1.8, maximum=3.2, value=2.3, step=0.05, label="crop scale")
     driving_smooth_observation_variance_retargeting = gr.Number(value=3e-6, label="motion smooth strength", minimum=1e-11, maximum=1e-2, step=1e-8)
+    video_retargeting_silence = gr.Checkbox(value=False, label="keeping the lip silent")
     eye_retargeting_slider = gr.Slider(minimum=0, maximum=0.8, step=0.01, label="target eyes-open ratio")
     lip_retargeting_slider = gr.Slider(minimum=0, maximum=0.8, step=0.01, label="target lip-open ratio")
     video_lip_retargeting_slider = gr.Slider(minimum=0, maximum=0.8, step=0.01, label="target lip-open ratio")
@@ -230,8 +231,6 @@ def on_ui_tabs():
     retargeting_output_image_paste_back = gr.Gallery(preview=True, selected_index=0, object_fit="contain", height=512)
     output_video = gr.Video(autoplay=False)
     output_video_paste_back = gr.Video(autoplay=False)
-    output_video_i2v = gr.Video(autoplay=False)
-    output_video_concat_i2v = gr.Video(autoplay=False)
 
     output_image_animal = gr.Image(type="numpy")
     output_image_animal_paste_back = gr.Image(type="numpy")
@@ -309,9 +308,27 @@ def on_ui_tabs():
                                     inputs=[driving_video_input],
                                     cache_examples=False,
                                 )
-                        with gr.TabItem("📷 Driving Webcam") as v_tab_webcam:
-                            with gr.Accordion(open=True, label="Driving Webcam"):
+                        with gr.TabItem("🎥 Driving Video (Webcam)") as v_tab_video_webcam:
+                            with gr.Accordion(open=True, label="Driving Video (Webcam)"):
                                 driving_video_webcam_input = gr.Video(format="mp4", include_audio=False)
+                        with gr.TabItem("🖼️ Driving Image") as v_tab_image:
+                            with gr.Accordion(open=True, label="Driving Image"):
+                                driving_image_input = gr.Image(type="filepath")
+                                gr.Examples(
+                                    examples=[
+                                        [osp.join(example_video_dir, "d30.jpg")],
+                                        [osp.join(example_video_dir, "d9.jpg")],
+                                        [osp.join(example_video_dir, "d19.jpg")],
+                                        [osp.join(example_video_dir, "d8.jpg")],
+                                        [osp.join(example_video_dir, "d12.jpg")],
+                                        [osp.join(example_video_dir, "d38.jpg")],
+                                    ],
+                                    inputs=[driving_image_input],
+                                    cache_examples=False,
+                                )
+                        with gr.TabItem("📷 Driving Image (Webcam)") as v_tab_image_webcam:
+                            with gr.Accordion(open=True, label="Driving Image (Webcam)"):
+                                driving_image_webcam_input = gr.Image(type="filepath")
                         with gr.TabItem("📁 Driving Pickle") as v_tab_pickle:
                             with gr.Accordion(open=True, label="Driving Pickle"):
                                 driving_video_pickle_input = gr.File(type="file", file_types=[".pkl"])
@@ -328,9 +345,11 @@ def on_ui_tabs():
                                 )
 
                         v_tab_selection = gr.Textbox(visible=False)
-                        v_tab_pickle.select(lambda: "Pickle", None, v_tab_selection)
-                        v_tab_webcam.select(lambda: ("Webcam", gr.Video.update(source="webcam")), None, [v_tab_selection, driving_video_webcam_input])
                         v_tab_video.select(lambda: "Video", None, v_tab_selection)
+                        v_tab_video_webcam.select(lambda: ("VideoW", { "value": None, "source": "webcam", "__type__": "update" }), None, [v_tab_selection, driving_video_webcam_input])
+                        v_tab_image.select(lambda: "Image", None, v_tab_selection)
+                        v_tab_image_webcam.select(lambda: ("ImageW", { "value": None, "source": "webcam", "__type__": "update" }), None, [v_tab_selection, driving_image_webcam_input])
+                        v_tab_pickle.select(lambda: "Pickle", None, v_tab_selection)
                     # with gr.Accordion(open=False, label="Animation Instructions"):
                         # gr.Markdown(load_description(repo_root / "assets/gradio/gradio_description_animation.md"))
                     with gr.Accordion(open=True, label="Cropping Options for Driving Video"):
@@ -347,9 +366,9 @@ def on_ui_tabs():
                         flag_relative_input = gr.Checkbox(value=True, label="relative motion")
                         flag_remap_input = gr.Checkbox(value=True, label="paste-back")
                         flag_stitching_input = gr.Checkbox(value=True, label="stitching")
+                        animation_region = gr.Radio(["exp", "pose", "lip", "eyes", "all"], value="all", label="animation region")
                         driving_option_input = gr.Radio(['expression-friendly', 'pose-friendly'], value="expression-friendly", label="driving option (i2v)")
                         driving_multiplier = gr.Number(value=1.0, label="driving multiplier (i2v)", minimum=0.0, maximum=2.0, step=0.02)
-                        flag_video_editing_head_rotation = gr.Checkbox(value=False, label="relative head rotation (v2v)")
                         driving_smooth_observation_variance = gr.Number(value=3e-7, label="motion smooth strength (v2v)", minimum=1e-11, maximum=1e-2, step=1e-8)
 
             gr.Markdown(load_description(repo_root / "assets/gradio/gradio_description_animate_clear.md"))
@@ -357,13 +376,16 @@ def on_ui_tabs():
                 process_button_animation = gr.Button("🚀 Animate", variant="primary")
             with gr.Row():
                 with gr.Column():
-                    with gr.Accordion(open=True, label="The animated video in the original image space"):
-                        output_video_i2v.render()
+                    output_video_i2v = gr.Video(autoplay=False, label="The animated video in the original image space")
                 with gr.Column():
-                    with gr.Accordion(open=True, label="The animated video"):
-                        output_video_concat_i2v.render()
+                    output_video_concat_i2v = gr.Video(autoplay=False, label="The animated video")
             with gr.Row():
-                process_button_reset = gr.ClearButton([source_image_input, source_video_input, driving_video_pickle_input, driving_video_input, output_video_i2v, output_video_concat_i2v], value="🧹 Clear")
+                with gr.Column():
+                    output_image_i2i = gr.Image(type="numpy", label="The animated image in the original image space", visible=False)
+                with gr.Column():
+                    output_image_concat_i2i = gr.Image(type="numpy", label="The animated image", visible=False)
+            with gr.Row():
+                process_button_reset = gr.ClearButton([source_image_input, source_video_input, driving_video_pickle_input, driving_video_input, driving_image_input, output_video_i2v, output_video_concat_i2v, output_image_i2i, output_image_concat_i2i], value="🧹 Clear")
 
             with gr.Row():
                 # Examples
@@ -397,7 +419,6 @@ def on_ui_tabs():
                                 flag_do_crop_input,
                                 flag_remap_input,
                                 flag_crop_driving_video_input,
-                                flag_video_editing_head_rotation,
                                 driving_smooth_observation_variance,
                             ],
                             outputs=[output_image, output_image_paste_back],
@@ -493,6 +514,7 @@ def on_ui_tabs():
                 video_retargeting_source_scale.render()
                 video_lip_retargeting_slider.render()
                 driving_smooth_observation_variance_retargeting.render()
+                video_retargeting_silence.render()
             with gr.Row(visible=True):
                 process_button_retargeting_video = gr.Button("🍄 Retargeting Video", variant="primary")
             with gr.Row(visible=True):
@@ -503,9 +525,10 @@ def on_ui_tabs():
                             examples=[
                                 [osp.join(example_portrait_dir, "s13.mp4")],
                                 # [osp.join(example_portrait_dir, "s18.mp4")],
-                                [osp.join(example_portrait_dir, "s20.mp4")],
+                                # [osp.join(example_portrait_dir, "s20.mp4")],
                                 [osp.join(example_portrait_dir, "s29.mp4")],
                                 [osp.join(example_portrait_dir, "s32.mp4")],
+                                [osp.join(example_video_dir, "d3.mp4")],
                             ],
                             inputs=[retargeting_input_video],
                             cache_examples=False,
@@ -533,17 +556,19 @@ def on_ui_tabs():
                 inputs=[
                     source_image_input,
                     source_video_input,
-                    driving_video_pickle_input,
-                    driving_video_webcam_input,
                     driving_video_input,
+                    driving_video_webcam_input,
+                    driving_image_input,
+                    driving_image_webcam_input,
+                    driving_video_pickle_input,
                     flag_relative_input,
                     flag_do_crop_input,
                     flag_remap_input,
                     flag_stitching_input,
+                    animation_region,
                     driving_option_input,
                     driving_multiplier,
                     flag_crop_driving_video_input,
-                    flag_video_editing_head_rotation,
                     source_face_index,
                     scale,
                     vx_ratio,
@@ -556,9 +581,10 @@ def on_ui_tabs():
                     tab_selection,
                     v_tab_selection,
                 ],
-                outputs=[output_video_i2v, output_video_concat_i2v],
+                outputs=[output_video_i2v, output_video_i2v, output_video_concat_i2v, output_video_concat_i2v, output_image_i2i, output_image_i2i, output_image_concat_i2i, output_image_concat_i2i],
                 show_progress='full'
             )
+
 
             retargeting_input_image.change(
                 fn=gpu_wrapped_init_retargeting_image,
@@ -581,7 +607,7 @@ def on_ui_tabs():
 
             process_button_retargeting_video.click(
                 fn=gpu_wrapped_execute_video_retargeting,
-                inputs=[video_lip_retargeting_slider, retargeting_input_video, video_face_index, video_retargeting_source_scale, driving_smooth_observation_variance_retargeting, flag_do_crop_input_retargeting_video],
+                inputs=[video_lip_retargeting_slider, retargeting_input_video, video_face_index, video_retargeting_source_scale, driving_smooth_observation_variance_retargeting, video_retargeting_silence, flag_do_crop_input_retargeting_video],
                 outputs=[output_video, output_video_paste_back],
                 show_progress='full'
             )

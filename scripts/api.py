@@ -327,7 +327,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
     class LivePortraitRequest(BaseModel):
         source: str = ""  # path to the source portrait (human/animal) or video (human) or base64 encoded one
         source_file_extension: str = ".jpg"  # source file extension if source is a base64 encoded string or url
-        driving: str = ""  # path to driving video or template (.pkl format) or base64 encoded one
+        driving: str = ""  # path to driving image, video or template (.pkl format) or base64 encoded one
         driving_file_extension: str = ".mp4"  # driving file extension if driving is a base64 encoded string or url
         output_dir: str = 'outputs/live-portrait/'  # directory to save output video
         output_mode: Literal["video", "images"] = "video"  # whether to generate an output video or multiple images at given frame indices (see frame_indices)
@@ -341,9 +341,8 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         flag_crop_driving_video: bool = False  # whether to crop the driving video, if the given driving info is a video
         device_id: int = 0  # gpu device id
         flag_force_cpu: bool = False  # force cpu inference, WIP!
-        flag_normalize_lip: bool = True  # whether to let the lip to close state before animation, only take effect when flag_eye_retargeting and flag_lip_retargeting is False
+        flag_normalize_lip: bool = False  # whether to let the lip to close state before animation, only take effect when flag_eye_retargeting and flag_lip_retargeting is False
         flag_source_video_eye_retargeting: bool = False  # when the input is a source video, whether to let the eye-open scalar of each frame to be the same as the first source frame before the animation, only take effect when flag_eye_retargeting and flag_lip_retargeting is False, may cause the inter-frame jittering
-        flag_video_editing_head_rotation: bool = False  # when the input is a source video, whether to inherit the relative head rotation from the driving video
         flag_eye_retargeting: bool = False  # not recommend to be True, WIP; whether to transfer the eyes-open ratio of each driving frame to the source image or the corresponding source frame
         flag_lip_retargeting: bool = False  # not recommend to be True, WIP; whether to transfer the lip-open ratio of each driving frame to the source image or the corresponding source frame
         flag_stitching: bool = True  # recommend to True if head movement is small, False if head movement is large or the source image is an animal
@@ -354,6 +353,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         driving_multiplier: float = 1.0 # be used only when driving_option is "expression-friendly"
         driving_smooth_observation_variance: float = 3e-7  # smooth strength scalar for the animated video when the input is a source video, the larger the number, the smoother the animated video; too much smoothness would result in loss of motion accuracy
         audio_priority: Literal['source', 'driving'] = 'driving'  # whether to use the audio from source or driving video
+        animation_region: Literal["exp", "pose", "lip", "eyes", "all"] = "all" # the region where the animation was performed, "exp" means the expression, "pose" means the head pose, "all" means all regions
         ########## source crop arguments ##########
         det_thresh: float = 0.15 # detection threshold
         scale: float = 2.3  # the ratio of face area is smaller if scale is larger
@@ -682,6 +682,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         lip_ratio: float = 0  # target lip-open ratio (0 -> 0.8)
         retargeting_source_scale: float = 2.3  # the ratio of face area is smaller if scale is larger
         driving_smooth_observation_variance_retargeting: float = 3e-6  # motion smooth strength
+        video_retargeting_silence: bool = False  # keeping the lip silent
         flag_do_crop_input_retargeting_video: bool = True  # whether to crop the source video to the face-cropping space
 
 
@@ -736,6 +737,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
                 payload.source_face_index,
                 payload.retargeting_source_scale,
                 payload.driving_smooth_observation_variance_retargeting,
+                payload.video_retargeting_silence,
                 payload.flag_do_crop_input_retargeting_video
             )
             wfp, wfp_concat = rename_output_videos(wfp, wfp_concat, temp_output_dir, new_names_to_old_names)
