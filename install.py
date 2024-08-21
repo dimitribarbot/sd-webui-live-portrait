@@ -13,6 +13,8 @@ from internal_liveportrait.utils import IS_WINDOWS, is_valid_torch_version, IS_M
 
 # Based on https://onnxruntime.ai/docs/reference/compatibility.html#onnx-opset-support
 onnx_to_onnx_runtime_versions = {
+    "1.16.1": "1.18",
+    "1.16.0": "1.18",
     "1.15.0": "1.17",
     "1.14.1": "1.16",
     "1.14.0": "1.15",
