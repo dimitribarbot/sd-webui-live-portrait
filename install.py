@@ -8,7 +8,7 @@ from packaging.version import parse
 import subprocess
 import tempfile
 
-from internal_liveportrait.utils import is_valid_torch_version, is_mac_os
+from internal_liveportrait.utils import IS_WINDOWS, is_valid_torch_version, IS_MACOS, get_xpose_build_commands_and_env
 
 
 # Based on https://onnxruntime.ai/docs/reference/compatibility.html#onnx-opset-support
@@ -111,8 +111,8 @@ def install_xpose():
     """
     Install XPose.
     """
-    if not is_valid_torch_version() or is_mac_os():
-        # XPose is incompatible with MacOS or torch version 2.1.x
+    if not is_valid_torch_version() or IS_MACOS:
+        # XPose is incompatible with MacOS, non NVIDIA graphic cards or torch version 2.1.x
         return
     op_root = os.path.join(repo_root, "liveportrait", "utils", "dependencies", "XPose", "models", "UniPose", "ops")
     op_lib = os.path.join(op_root, "lib")
@@ -128,10 +128,11 @@ def install_xpose():
         with tempfile.TemporaryDirectory() as tmpdirname:
             shutil.copytree(op_root, tmpdirname, dirs_exist_ok=True)
             with open(log_file, 'w') as log_f, open(log_err_file, 'w') as log_err_f:
+                commands, env = get_xpose_build_commands_and_env()
                 result = subprocess.run(
-                    [sys.executable, "setup.py", "build"],
+                    commands,
                     cwd=tmpdirname,
-                    env=os.environ,
+                    env=env,
                     errors="ignore",
                     stdout=log_f,
                     stderr=log_err_f
@@ -142,7 +143,8 @@ def install_xpose():
             op_build = os.path.join(tmpdirname, "build")
             lib_src = Path(op_build)
             lib_dst = Path(op_lib)
-            for lib_file in lib_src.rglob("MultiScaleDeformableAttention*"):
+            extension = ".pyd" if IS_WINDOWS else ".so"
+            for lib_file in lib_src.rglob(f"MultiScaleDeformableAttention*{extension}"):
                 shutil.copy2(lib_file, lib_dst)
 
 

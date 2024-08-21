@@ -8,20 +8,20 @@ You can find here the procedure to install XPose on your computer.
 
 ### Microsoft Visual Studio Build Tools
 
-First, you need to have the proper installation of the Microsoft Visual Studio Build Tools. Go to [Visual Studio 2022 Release History](https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-history#evergreen-bootstrappers) and download the Build Tools corresponding to version 17.8 (Fall 2023 LTSC):  
+First, you need to have the proper installation of the Microsoft Visual Studio Build Tools. Go to [Visual Studio 2019 Release History](https://learn.microsoft.com/en-us/visualstudio/releases/2019/history#release-dates-and-build-numbers) and download the Build Tools corresponding to latest version:  
 
-![image](./install-msvc-17.8-0.png)
+![image](./install-msvc-16.x-0.png)
 
 > [!Note]
-> Note that if you have already a more recent version of the Build Tools (17.10 and above), you must first uninstall it as more recent versions are not compatible with CUDA Toolkit 11.8. Don't forget to check under any Visual Studio version you may have installed (you'll be able to reinstall more recent versions after XPose installation).  
+> Note that more recent versions of the Build Tools (Visual Studio 2022 17.10 and above) are not compatible with CUDA Toolkit 11.8. Even if you already have Visual Studio 2022 Build Tools installed you still have to download and install the 2019 version.  
 
 In the installation dialog, select "Desktop development with C++" as shown in the image below (ensure that the version to be installed is the correct one) and click "Install":
 
-![image](./install-msvc-17.8-1.png)
+![image](./install-msvc-16.x-1.png)
 
 At the end of the installation procedure, you should see a screen like the following:
 
-![image](./install-msvc-17.8-2.png)
+![image](./install-msvc-16.x-2.png)
 
 ### CUDA Toolkit 11.8
 
