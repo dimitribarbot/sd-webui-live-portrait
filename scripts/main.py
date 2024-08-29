@@ -85,7 +85,10 @@ def on_ui_tabs():
         )
 
     def get_argument_config():
-        output_dir = osp.join(data_path, "outputs", "live-portrait", f"{datetime.date.today()}")
+        default_output_dir = osp.join(data_path, "outputs", "live-portrait", f"{datetime.date.today()}")
+        config_output_dir = shared.opts.data.get("live_portrait_output_dir", '')
+
+        output_dir = config_output_dir or default_output_dir
 
         return ArgumentConfig(
             output_dir=output_dir
@@ -117,6 +120,7 @@ def on_ui_tabs():
         else:
             gradio_pipeline.cropper.update_config(crop_cfg.__dict__)
             gradio_pipeline.live_portrait_wrapper.update_config(inference_cfg.__dict__)
+            gradio_pipeline.args.output_dir = argument_cfg.output_dir
         return gradio_pipeline
     
     def init_gradio_pipeline_animal():
@@ -140,6 +144,7 @@ def on_ui_tabs():
             )
         else:
             gradio_pipeline_animal.live_portrait_wrapper_animal.update_config(inference_cfg.__dict__)
+            gradio_pipeline_animal.args.output_dir = argument_cfg.output_dir
         return gradio_pipeline_animal
 
     def gpu_wrapped_execute_video(*args, **kwargs):
@@ -833,6 +838,15 @@ def on_ui_settings():
         shared.OptionInfo(
             False,
             "Enable torch.compile for faster inference",
+            section=section
+        ),
+    )
+
+    shared.opts.add_option(
+        "live_portrait_output_dir",
+        shared.OptionInfo(
+            "",
+            "Live portrait generation output directory",
             section=section
         ),
     )
