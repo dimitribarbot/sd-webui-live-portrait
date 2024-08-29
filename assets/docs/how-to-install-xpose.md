@@ -1,6 +1,6 @@
 # Install XPose
 
-XPose, the face detector model used for animal mode, is currently not working with MacOS or non NVIDIA graphic cards, and is not compatible with pytorch version 2.1.x which is the default version of today's Automatic1111 version v1.10.1. To allow animal mode to work correctly, you must downgrade your pytorch version to v2.0.1 that was built using cuda v1.18.  
+XPose, the face detector model used for animal mode, is currently not working with MacOS or non NVIDIA graphic cards, and is not compatible with pytorch version 2.1.x which is the default version of today's Automatic1111's SD WebUI version v1.10.1. To allow animal mode to work correctly, you must downgrade your pytorch version to v2.0.1 that was built using cuda v1.18.  
 
 You can find here the procedure to install XPose on your computer.
 
@@ -43,7 +43,7 @@ Finally, under "CUDA", only select "Development" and "Runtime" and click "Next":
 
 Click "Next" and "Finish" to end CUDA Toolkit installation.
 
-### Automatic1111
+### Automatic1111's SD WebUI
 
 Open the `stable-diffusion-webui/webui-user.bat` file and make the following changes:
 
@@ -54,9 +54,9 @@ set TORCH_COMMAND=pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 --ext
 set XFORMERS_PACKAGE=xformers==0.0.22
 ```
 
-As we have downgraded the pytorch version, to avoid unnecessary warnings at each launch of Automatic1111, we add the `--skip-version-check` flag to the command line arguments.
+As we have downgraded the pytorch version, to avoid unnecessary warnings at each launch of Automatic1111's SD WebUI, we add the `--skip-version-check` flag to the command line arguments.
 
-After these modifications, close Stable Diffusion WebUI if not done and restart it using the flags `--reinstall-torch` and `--reinstall-xformers` (if you're using `xformers`). These flags can then be removed for subsequent launches of Automatic1111.
+After these modifications, close Stable Diffusion WebUI if not done and restart it using the flags `--reinstall-torch` and `--reinstall-xformers` (if you're using `xformers`). These flags can then be removed for subsequent launches of Automatic1111's SD WebUI.
 
 If everything went well, you should be able to use animal mode in the `Live Portrait` tab.
 
@@ -78,7 +78,7 @@ Then, you need to install the v11.8 CUDA Toolkit. Go to [NVIDIA CUDA Toolkit](ht
 
 At the end of the installation procedure, add the correct version of CUDA Toolkit to your PATH environment variable as described [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#environment-setup) by replacing latest version of CUDA with 11.8 in folder paths: `/usr/local/cuda-11.8/`.
 
-### Automatic1111
+### Automatic1111's SD WebUI
 
 Open the `stable-diffusion-webui/webui-user.sh` file and make the following changes:
 
@@ -89,9 +89,9 @@ export TORCH_COMMAND="pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 -
 export XFORMERS_PACKAGE="xformers==0.0.22"
 ```
 
-As we have downgraded the pytorch version, to avoid unnecessary warnings at each launch of Automatic1111, we add the `--skip-version-check` flag to the command line arguments.
+As we have downgraded the pytorch version, to avoid unnecessary warnings at each launch of Automatic1111's SD WebUI, we add the `--skip-version-check` flag to the command line arguments.
 
-After these modifications, close Stable Diffusion WebUI if not done and restart it using the flags `--reinstall-torch` and `--reinstall-xformers` (if you're using `xformers`). These flags can then be removed for subsequent launches of Automatic1111.
+After these modifications, close Stable Diffusion WebUI if not done and restart it using the flags `--reinstall-torch` and `--reinstall-xformers` (if you're using `xformers`). These flags can then be removed for subsequent launches of Automatic1111's SD WebUI.
 
 If everything went well, you should be able to use animal mode in the `Live Portrait` tab.
 

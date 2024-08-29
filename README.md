@@ -18,17 +18,17 @@ This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.c
 
 ### /!\ Important notes /!\
 
-XPose, the face detector model used for animal mode, is currently not working with MacOS or non NVIDIA graphic cards, and is not compatible with pytorch version 2.1.x which is the default version of today's Automatic1111 version v1.10.1. To allow animal mode to work correctly, you must downgrade your pytorch version to v2.0.1 that was built using cuda v1.18.  
+XPose, the face detector model used for animal mode, is currently not working with MacOS or non NVIDIA graphic cards, and is not compatible with pytorch version 2.1.x which is the default version of today's Automatic1111's SD WebUI version v1.10.1. To allow animal mode to work correctly, you must downgrade your pytorch version to v2.0.1 that was built using cuda v1.18.  
 
 Please, follow the instructions [here](assets/docs/how-to-install-xpose.md) if you want to enable animal mode.
 
 ## Output
 
-By default, generated files can be found in the `stable-diffusion-webui/outputs/live-portrait` folder. It can be overriden in Automatic1111 settings (see section below).
+By default, generated files can be found in the `stable-diffusion-webui/outputs/live-portrait` folder. It can be overriden in Automatic1111's SD WebUI settings (see section below).
 
 ## Settings
 
-In the Automatic1111 settings tab, under the Live Portrait section, you can find the following configuration settings:
+In the Automatic1111's SD WebUI settings tab, under the Live Portrait section, you can find the following configuration settings:
 
 ![image](./assets/docs/extension-settings-2.png)
 
@@ -59,7 +59,7 @@ For animal mode, this extension is using XPose which is also strictly for NON-CO
 If necessary, it can be downloaded from: https://huggingface.co/KwaiVGI/LivePortrait/resolve/main/liveportrait_animals/xpose.pth.
 
 ## API
-Routes have been added to the Automatic1111 API:
+Routes have been added to the Automatic1111's SD WebUI API:
 - `/live-portrait/human`: inference for humans.
 - `/live-portrait/human/retargeting/image`: retargeting for human portraits. Supports an array of input parameters to generate multiple result images.
 - `/live-portrait/human/retargeting/image/init`: get retargeting lip ratio and eye ratio of human portraits.
