@@ -12,8 +12,11 @@ First, you need to have the proper installation of the Microsoft Visual Studio B
 
 ![image](./install-msvc-16.x-0.png)
 
-> [!Note]
+> [!NOTE]
 > Note that more recent versions of the Build Tools (Visual Studio 2022 17.10 and above) are not compatible with CUDA Toolkit 11.8. Even if you already have Visual Studio 2022 Build Tools installed you still have to download and install the 2019 version.  
+
+> [!WARNING]
+> If you're following this tutorial out of the Automatic1111's WebUI extension installation context, ensure to uninstall all previous installations of Visual Studio 2022 Build Tools 17.10 or newer, otherwise the procedure will fail.  
 
 In the installation dialog, select "Desktop development with C++" as shown in the image below (ensure that the version to be installed is the correct one) and click "Install":
 
