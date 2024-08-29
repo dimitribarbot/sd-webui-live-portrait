@@ -1,15 +1,12 @@
 import launch
 import os
 import shutil
-from importlib import metadata
 from pathlib import Path
-from typing import Optional
 from packaging.version import parse
 import subprocess
 import tempfile
 
-from internal_liveportrait.utils import IS_WINDOWS, IS_MACOS, is_valid_torch_version, get_xpose_build_commands_and_env
-
+from internal_liveportrait.utils_base import IS_WINDOWS, IS_MACOS, is_valid_torch_version, get_xpose_build_commands_and_env, get_installed_version
 
 # Based on https://onnxruntime.ai/docs/reference/compatibility.html#onnx-opset-support
 onnx_to_onnx_runtime_versions = {
@@ -27,16 +24,8 @@ onnx_to_onnx_runtime_versions = {
     "1.10.0": "1.10"
 }
 
-
 repo_root = Path(__file__).parent
 main_req_file = repo_root / "requirements.txt"
-
-
-def get_installed_version(package: str) -> Optional[str]:
-    try:
-        return metadata.version(package)
-    except Exception:
-        return None
 
 
 def extract_base_package(package_string: str) -> str:
@@ -61,7 +50,7 @@ def install_requirements(req_file):
                     package_name, package_version = package.split(">=")
                     installed_version = get_installed_version(package_name)
                     if not installed_version or parse(
-                        installed_version
+                            installed_version
                     ) < parse(package_version):
                         launch.run_pip(
                             f'install -U "{package}"',
@@ -71,7 +60,7 @@ def install_requirements(req_file):
                     package_name, package_version = package.split("<=")
                     installed_version = get_installed_version(package_name)
                     if not installed_version or parse(
-                        installed_version
+                            installed_version
                     ) > parse(package_version):
                         launch.run_pip(
                             f'install "{package_name}=={package_version}"',
@@ -104,6 +93,23 @@ def are_versions_similar(version_left: str, version_right: str):
     return parsed_version_left.major == parsed_version_right.major and parsed_version_left.minor == parsed_version_right.minor
 
 
+def get_onnxruntime_extra_index():
+    """
+    onnxruntime-gpu requires wheel from a different index for CUDA 12
+    https://onnxruntime.ai/docs/install/#install-onnx-runtime-gpu-cuda-12x
+    https://aiinfra.visualstudio.com/PublicPackages/_artifacts/feed/onnxruntime-cuda-12/PyPI/onnxruntime-gpu/overview
+    https://aiinfra.visualstudio.com/PublicPackages/_artifacts/feed/onnxruntime-cuda-12/connect
+    """
+    import subprocess
+    import re
+    try:
+        if re.search(r'CUDA\s+Version:\s+([0-9.]+)\s*', subprocess.check_output(["nvidia-smi"]).decode()).group(1).startswith('12'):
+            return ' --extra-index-url "https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/"'
+    except Exception as e:
+        print(f'Unable to get CUDA version: {e}')
+    return ''
+
+
 def install_onnxruntime():
     """
     Install onnxruntime or onnxruntime-gpu based on the availability of CUDA.
@@ -113,26 +119,34 @@ def install_onnxruntime():
     onnxruntime_gpu_installed_version = get_installed_version("onnxruntime-gpu")
 
     expected_onnxruntime_version = get_onnxruntime_version_given_onnx_version()
-    
+
     if not onnxruntime_installed_version and not onnxruntime_gpu_installed_version:
-        import torch.cuda as cuda # torch import head to improve loading time
-        onnxruntime = 'onnxruntime-gpu' if cuda.is_available() else 'onnxruntime'
-        onnxruntime_package = f"{onnxruntime}=={expected_onnxruntime_version}" if expected_onnxruntime_version else onnxruntime
+        import torch.cuda as cuda  # torch import head to improve loading time
+
+        if cuda.is_available():
+            onnxruntime = 'onnxruntime-gpu'
+            onnxruntime_package = f"onnxruntime-gpu=={expected_onnxruntime_version}" if expected_onnxruntime_version else onnxruntime
+            onnxruntime_package += get_onnxruntime_extra_index()
+        else:
+            onnxruntime = 'onnxruntime'
+            onnxruntime_package = f"onnxruntime=={expected_onnxruntime_version}" if expected_onnxruntime_version else onnxruntime
+
         launch.run_pip(
             f'install {onnxruntime_package}',
             f"sd-webui-live-portrait requirement: {onnxruntime_package}",
         )
     else:
         if onnxruntime_installed_version and expected_onnxruntime_version \
-            and not are_versions_similar(onnxruntime_installed_version, expected_onnxruntime_version):
+                and not are_versions_similar(onnxruntime_installed_version, expected_onnxruntime_version):
             onnxruntime_package = f"onnxruntime=={expected_onnxruntime_version}"
             launch.run_pip(
                 f'install {onnxruntime_package}',
                 f"sd-webui-live-portrait requirement: {onnxruntime_package}",
             )
         if onnxruntime_gpu_installed_version and expected_onnxruntime_version \
-            and not are_versions_similar(onnxruntime_gpu_installed_version, expected_onnxruntime_version):
-            onnxruntime_gpu_package = f"onnxruntime-gpu=={expected_onnxruntime_version}"
+                and not are_versions_similar(onnxruntime_gpu_installed_version, expected_onnxruntime_version):
+            onnxruntime_gpu_package = f"onnxruntime-gpu=={expected_onnxruntime_version}{get_onnxruntime_extra_index()}"
+
             launch.run_pip(
                 f'install {onnxruntime_gpu_package}',
                 f"sd-webui-live-portrait requirement: {onnxruntime_gpu_package}",
@@ -143,12 +157,12 @@ def install_xpose():
     """
     Install XPose.
     """
-    if IS_MACOS or not is_valid_torch_version():
-        # XPose is incompatible with MacOS, non NVIDIA graphic cards or torch version 2.1.x
-        return
     op_root = os.path.join(repo_root, "liveportrait", "utils", "dependencies", "XPose", "models", "UniPose", "ops")
     op_lib = os.path.join(op_root, "lib")
     if not os.path.exists(op_lib) or len(os.listdir(op_lib)) == 0:
+        if IS_MACOS or not is_valid_torch_version():
+            # XPose is incompatible with MacOS, non NVIDIA graphic cards or torch version 2.1.x
+            return
         print("Installing sd-webui-live-portrait requirement: XPose", flush=True)
         if not os.path.exists(op_lib):
             os.makedirs(op_lib, exist_ok=True)
