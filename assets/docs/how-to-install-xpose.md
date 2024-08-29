@@ -95,6 +95,15 @@ After these modifications, close Stable Diffusion WebUI if not done and restart 
 
 If everything went well, you should be able to use animal mode in the `Live Portrait` tab.
 
+## WSL Users (Windows Subsystem for Linux)
+
+The installation procedure is the same as for Linux users, except that you need to select `WSL-Ubuntu` in the CUDA Toolkit 11.8 step. More information on how to install CUDA when using WSL can be found [here](https://docs.nvidia.com/cuda/wsl-user-guide/index.html).
+
+> [!Note]
+> Verify the CUDA version used by your system by running the `nvidia-smi` command in a terminal. If you have CUDA 12.x as screenshot below, you will need both CUDA Toolkit 11.8 and CUDA Toolkit 12.x to be installed in WSL. However, your environment variables should still points to the 11.8 CUDA version. Not installing CUDA Toolkit 12.x may lead to errors with onnxruntime-gpu during Live Portrait inference. You can find the CUDA Toolkit corresponding to your `nvidia-smi` version [here](https://developer.nvidia.com/cuda-toolkit-archive).
+
+![image](./nvidia-smi.png)
+
 ## Installation logs
 
 The building of the XPose OP dependency adds some logs in the `stable-diffusion-webui/extensions/sd-webui-live-portrait/logs` directory. If an error occurs during the extension installation, you may find useful information in the log files written in this folder.
