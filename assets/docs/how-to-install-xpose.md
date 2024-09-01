@@ -74,7 +74,7 @@ At the end of the installation procedure, add the correct version of CUDA Toolki
 
 ## WSL Users (Windows Subsystem for Linux)
 
-The installation procedure is the same as for Linux users, except that you need to select `WSL-Ubuntu` in the CUDA Toolkit installtion step. More information on how to install CUDA when using WSL can be found [here](https://docs.nvidia.com/cuda/wsl-user-guide/index.html).
+The installation procedure is the same as for Linux users, except that you need to select `WSL-Ubuntu` in the CUDA Toolkit installation step. More information on how to install CUDA when using WSL can be found [here](https://docs.nvidia.com/cuda/wsl-user-guide/index.html).
 
 > [!Note]
 > Verify the CUDA version used by your system by running the `nvidia-smi` command in a terminal. If you have CUDA 12.x as screenshot below and you're using PyTorch built using CUDA v11.8, you will need both CUDA Toolkit 11.8 and CUDA Toolkit 12.x to be installed in WSL. However, your environment variables should still points to the 11.8 CUDA version. Not installing CUDA Toolkit 12.x may lead to errors with onnxruntime-gpu during Live Portrait inference. You can find the CUDA Toolkit corresponding to your `nvidia-smi` version [here](https://developer.nvidia.com/cuda-toolkit-archive).
@@ -85,13 +85,13 @@ The installation procedure is the same as for Linux users, except that you need 
 
 The building of the XPose OP dependency adds some logs in the extension folder, by default in the `stable-diffusion-webui/extensions/sd-webui-live-portrait/logs` directory. If an error occurs during the extension installation, you may find useful information in the log files written in this folder.
 
-In case this procedure is not working, you can try the following one by downgrading your CUDA Toolkit to v11.8.
-
 ## Reinstall XPose
 
 To not impact performance when launching WebUI, by default we do not retry XPose installation in case of failure. To force XPose reinstall, you can:
 - either restart your SD WebUI and then go to the "Live Portrait" tab and in the "Animal" sub-tab click on the "Reinstall XPose and Restart WebUI" button (only visible if previous installation of XPose has failed),
 - or manually delete the `liveportrait/utils/dependencies/XPose/models/UniPose/ops/lib` folder in the extension folder, which is by default `stable-diffusion-webui/extensions/sd-webui-live-portrait` (in that case, folder to remove is `stable-diffusion-webui/extensions/sd-webui-live-portrait/liveportrait/utils/dependencies/XPose/models/UniPose/ops/lib`) and restart your SD WebUI.  
+
+In case this procedure is not working, you can try the following one by downgrading your CUDA Toolkit to v11.8.
 
 # Old procedure to install XPose (by downgrading CUDA to v11.8)
 
