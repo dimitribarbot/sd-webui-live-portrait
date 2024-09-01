@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import cast, Literal
 
 import modules.scripts as scripts
-from modules import devices, script_callbacks, shared
+from modules import devices, restart, script_callbacks, shared
 from modules.paths_internal import data_path
 
 from liveportrait.utils.helper import load_description
@@ -16,7 +16,7 @@ from liveportrait.gradio_pipeline import GradioPipeline, GradioPipelineAnimal
 
 from internal_liveportrait.utils import \
     download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, download_liveportrait_landmark_model, \
-    is_valid_torch_version, IS_MACOS, has_xpose_lib
+    IS_MACOS, has_xpose_lib, del_xpose_lib_dir
 
 
 repo_root = Path(__file__).parent.parent
@@ -171,6 +171,13 @@ def on_ui_tabs():
 
     def reset_sliders(*args, **kwargs):
         return 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.5, True, True
+    
+    def reinstall_xpose(*args, **kwargs):
+        del_xpose_lib_dir()
+        if restart.is_restartable:
+            restart.restart_program()
+        else:
+            restart.stop_program()
 
     # assets
     title_md = repo_root / "assets/gradio/gradio_title.md"
@@ -619,12 +626,17 @@ def on_ui_tabs():
             
         with gr.Tab("Animals"):
             if IS_MACOS:
-                gr.Markdown("Animal mode is not currently supported in MacOS.")
-            elif not is_valid_torch_version():
-                gr.Markdown("Animal mode needs NVIDIA graphic cards and is not currently supported by pytorch version 2.1.x.")
+                gr.Markdown("XPose model, required to generate animal videos, is not compatible with MacOS systems.")
             elif not has_xpose_lib():
-                gr.Markdown("XPose model, necessary to generate animal videos, is not installed correctly. Try to reinstall this extension.")
-            else:            
+                gr.Markdown("The XPose model, required to generate animal videos, is not installed or could not be installed correctly. Try to reinstall it by following instructions in this extension's README.")
+                reinstall_xpose_button = gr.Button("Reinstall XPose and Restart UI", variant="primary")
+                reinstall_xpose_button.click(
+                    fn=reinstall_xpose,
+                    _js='restart_reload',
+                    inputs=[],
+                    outputs=[],
+                )
+            else:
                 gr.HTML(load_description(title_md))
 
                 gr.Markdown(load_description(repo_root / "assets/gradio/gradio_description_upload_animal.md"))

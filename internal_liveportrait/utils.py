@@ -14,9 +14,19 @@ except Exception:
 repo_root = Path(__file__).parent.parent
 
 
+def get_xpose_lib_dir():
+    return os.path.join(repo_root, "liveportrait", "utils", "dependencies", "XPose", "models", "UniPose", "ops", "lib")
+
+
 def has_xpose_lib():
-    xpose_lib_dir = os.path.join(repo_root, "liveportrait", "utils", "dependencies", "XPose", "models", "UniPose", "ops", "lib")
+    xpose_lib_dir = get_xpose_lib_dir()
     return os.path.exists(xpose_lib_dir) and len(os.listdir(xpose_lib_dir)) > 0
+
+
+def del_xpose_lib_dir():
+    import shutil
+    xpose_lib_dir = get_xpose_lib_dir()
+    shutil.rmtree(xpose_lib_dir, ignore_errors=True)
 
 
 def download_models(model_root, model_urls):

@@ -1,12 +1,10 @@
 import launch
 import os
-import shutil
 from pathlib import Path
 from packaging.version import parse
-import subprocess
 import tempfile
 
-from internal_liveportrait.utils_base import IS_WINDOWS, IS_MACOS, is_valid_torch_version, get_xpose_build_commands_and_env, get_installed_version
+from internal_liveportrait.utils_base import IS_WINDOWS, IS_MACOS, get_xpose_build_commands_and_env, get_installed_version
 
 # Based on https://onnxruntime.ai/docs/reference/compatibility.html#onnx-opset-support
 onnx_to_onnx_runtime_versions = {
@@ -159,11 +157,13 @@ def install_xpose():
     """
     op_root = os.path.join(repo_root, "liveportrait", "utils", "dependencies", "XPose", "models", "UniPose", "ops")
     op_lib = os.path.join(op_root, "lib")
-    if not os.path.exists(op_lib) or len(os.listdir(op_lib)) == 0:
-        if IS_MACOS or not is_valid_torch_version():
-            # XPose is incompatible with MacOS, non NVIDIA graphic cards or torch version 2.1.x
+    if not os.path.exists(op_lib):
+        if IS_MACOS:
+            # XPose is incompatible with MacOS
             return
         print("Installing sd-webui-live-portrait requirement: XPose", flush=True)
+        import subprocess
+        import shutil
         if not os.path.exists(op_lib):
             os.makedirs(op_lib, exist_ok=True)
         op_logs = os.path.join(repo_root, "logs")

@@ -18,9 +18,7 @@ This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.c
 
 ### /!\ Important notes /!\
 
-XPose, the face detector model used for animal mode, is currently not working with MacOS or non NVIDIA graphic cards, and is not compatible with pytorch version 2.1.x which is the default version of today's Automatic1111's SD WebUI version v1.10.1. To allow animal mode to work correctly, you must downgrade your pytorch version to v2.0.1 that was built using cuda v1.18.  
-
-Please, follow the instructions [here](assets/docs/how-to-install-xpose.md) if you want to enable animal mode.
+XPose, the face detector model used for animal mode, is currently not working with MacOS or non NVIDIA graphic cards. To allow animal mode to work correctly, follow the instructions described [here](assets/docs/how-to-install-xpose.md).
 
 ## Output
 
