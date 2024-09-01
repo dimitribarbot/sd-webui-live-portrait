@@ -91,4 +91,4 @@ To not impact performance when launching WebUI, by default we do not retry XPose
 - either restart your SD WebUI and then go to the "Live Portrait" tab and in the "Animal" sub-tab click on the "Reinstall XPose and Restart WebUI" button (only visible if previous installation of XPose has failed),
 - or manually delete the `liveportrait/utils/dependencies/XPose/models/UniPose/ops/lib` folder in the extension folder, which is by default `stable-diffusion-webui/extensions/sd-webui-live-portrait` (in that case, folder to remove is `stable-diffusion-webui/extensions/sd-webui-live-portrait/liveportrait/utils/dependencies/XPose/models/UniPose/ops/lib`) and restart your SD WebUI.  
 
-In case this procedure is not working, you can try the [following one](./how-to-install-xpose.md) by downgrading your CUDA Toolkit to v11.8.
+In case this procedure is not working, you can try the [following one](./how-to-install-xpose-old.md) by downgrading your CUDA Toolkit to v11.8.
