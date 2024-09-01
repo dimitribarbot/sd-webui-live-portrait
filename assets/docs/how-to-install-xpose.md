@@ -8,7 +8,9 @@ You can find here the procedure to install XPose on your computer.
 
 ### CUDA Toolkit
 
-Then, you need to install a CUDA Toolkit compatible with your PyTorch installation. The major version of the CUDA Toolkit you'll choose to install must match the one that PyTorch used to build its binaries. By default, today's Automatic1111's SD WebUI version 1.10.1 is using a PyTorch module built using CUDA v12.1. Therefore, you need to install a CUDA Toolkit v12.x minimum.
+First, you need to install a CUDA Toolkit compatible with your PyTorch installation. **The major version of the CUDA Toolkit you'll choose to install must match the one that PyTorch used to build its binaries.** By default, today's Automatic1111's SD WebUI version 1.10.1 is using a PyTorch module built using CUDA v12.1. Therefore, you need to install a CUDA Toolkit v12.x minimum.  
+
+Note that the CUDA Toolkit you can choose depends on your NVIDIA driver version. You can refer to this [CUDA Toolkit and Corresponding Driver Versions](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#id5) compatibility table provided by NVIDIA. To find your installed driver version, you can follow the procedure in the FAQ under the question ["Q: How can I find out what driver version I have?"](https://www.nvidia.com/en-gb/drivers/drivers-faq/). You may need to [update your drivers](https://www.nvidia.com/en-us/drivers/) if you want to install a newer version of CUDA Toolkit.  
 
 Go to [NVIDIA CUDA Toolkit Archives](https://developer.nvidia.com/cuda-toolkit-archive) page and select the right CUDA Toolkit version. Then, on the following page, select your operating system configuration. You can either choose "exe (local)" or "exe (network)" but the latter will be faster as you don't need to install all NVIDIA packages. Download the installer and execute it.
 
@@ -30,7 +32,7 @@ Click "Next" and "Finish" to end CUDA Toolkit installation.
 
 ### Microsoft Visual Studio Build Tools
 
-First, you need to have the proper installation of the Microsoft Visual Studio Build Tools. Go to [Visual Studio 2019 Release History](https://learn.microsoft.com/en-us/visualstudio/releases/2019/history#release-dates-and-build-numbers) and download the Build Tools corresponding to latest version:  
+Then, you need to have the proper installation of the Microsoft Visual Studio Build Tools. Go to [Visual Studio 2019 Release History](https://learn.microsoft.com/en-us/visualstudio/releases/2019/history#release-dates-and-build-numbers) and download the Build Tools corresponding to the latest version:  
 
 ![image](./install-msvc-16.x-0.png)
 
@@ -60,7 +62,9 @@ If an error message displays, you need to install the development tools from you
 
 ### CUDA Toolkit
 
-Then, you need to install a CUDA Toolkit compatible with your PyTorch installation. The major version of the CUDA Toolkit you'll choose to install must match the one that PyTorch used to build its binaries. By default, today's Automatic1111's SD WebUI version 1.10.1 is using a PyTorch module built using CUDA v12.1. Therefore, you need to install a CUDA Toolkit v12.x minimum.
+Then, you need to install a CUDA Toolkit compatible with your PyTorch installation. **The major version of the CUDA Toolkit you'll choose to install must match the one that PyTorch used to build its binaries.** By default, today's Automatic1111's SD WebUI version 1.10.1 is using a PyTorch module built using CUDA v12.1. Therefore, you need to install a CUDA Toolkit v12.x minimum.  
+
+Note that the CUDA Toolkit you can choose depends on your NVIDIA driver version. You can refer to this [CUDA Toolkit and Corresponding Driver Versions](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#id5) compatibility table provided by NVIDIA. To find your installed driver version, you can run a `nvidia-smi` command in a terminal. You may need to [update your drivers](https://www.nvidia.com/en-us/drivers/) if you want to install a newer version of CUDA Toolkit.  
 
 Go to [NVIDIA CUDA Toolkit Archives](https://developer.nvidia.com/cuda-toolkit-archive) page and select the right CUDA Toolkit version. Then, on the following page, select your operating system configuration. You can choose any of the "Installer Type" but note that you only need the CUDA Toolkit SDK to be installed, you can skip the driver installation if you've already done it.
 
@@ -97,7 +101,7 @@ You can find here the procedure to install XPose on your computer by downgrading
 
 ### CUDA Toolkit 11.8
 
-Then, you need to install the v11.8 CUDA Toolkit. Go to [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-11-8-0-download-archive) page and select your operating system configuration. You can either choose "exe (local)" or "exe (network)" but the latter will be faster as you don't need to install all NVIDIA packages. Download the installer and execute it.
+First, you need to install the v11.8 CUDA Toolkit. Go to [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-11-8-0-download-archive) page and select your operating system configuration. You can either choose "exe (local)" or "exe (network)" but the latter will be faster as you don't need to install all NVIDIA packages. Download the installer and execute it.
 
 ![image](./install-cuda-11.8-0.png)
 
@@ -117,7 +121,7 @@ Click "Next" and "Finish" to end CUDA Toolkit installation.
 
 ### Microsoft Visual Studio Build Tools
 
-First, you need to have the proper installation of the Microsoft Visual Studio Build Tools. Go to [Visual Studio 2019 Release History](https://learn.microsoft.com/en-us/visualstudio/releases/2019/history#release-dates-and-build-numbers) and download the Build Tools corresponding to latest version:  
+Then, you need to have the proper installation of the Microsoft Visual Studio Build Tools. Go to [Visual Studio 2019 Release History](https://learn.microsoft.com/en-us/visualstudio/releases/2019/history#release-dates-and-build-numbers) and download the Build Tools corresponding to the latest version:  
 
 ![image](./install-msvc-16.x-0.png)
 
