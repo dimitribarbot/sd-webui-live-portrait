@@ -158,14 +158,13 @@ def install_xpose():
     op_root = os.path.join(repo_root, "liveportrait", "utils", "dependencies", "XPose", "models", "UniPose", "ops")
     op_lib = os.path.join(op_root, "lib")
     if not os.path.exists(op_lib):
+        os.makedirs(op_lib, exist_ok=True)
         if IS_MACOS:
             # XPose is incompatible with MacOS
             return
         print("Installing sd-webui-live-portrait requirement: XPose", flush=True)
         import subprocess
         import shutil
-        if not os.path.exists(op_lib):
-            os.makedirs(op_lib, exist_ok=True)
         op_logs = os.path.join(repo_root, "logs")
         if not os.path.exists(op_logs):
             os.makedirs(op_logs, exist_ok=True)

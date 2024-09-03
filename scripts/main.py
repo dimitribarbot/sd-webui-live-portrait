@@ -40,6 +40,9 @@ class Script(scripts.Script):
 
 
 def on_ui_tabs():
+    if shared.cmd_opts.nowebui:
+        return
+
     def clear_model_cache():
         global gradio_pipeline, gradio_pipeline_animal
         gradio_pipeline = None
@@ -864,5 +867,8 @@ def on_ui_settings():
     )
 
 
-script_callbacks.on_ui_tabs(on_ui_tabs)
-script_callbacks.on_ui_settings(on_ui_settings)
+try:
+    script_callbacks.on_ui_tabs(on_ui_tabs)
+    script_callbacks.on_ui_settings(on_ui_settings)
+except:
+    print("Live Portrait UI failed to initialize")
