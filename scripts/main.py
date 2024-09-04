@@ -325,7 +325,7 @@ def on_ui_tabs():
                                 )
                         with gr.TabItem("🎥 Driving Video (Webcam)") as v_tab_video_webcam:
                             with gr.Accordion(open=True, label="Driving Video (Webcam)"):
-                                driving_video_webcam_input = gr.Video(format="mp4", include_audio=False)
+                                driving_video_webcam_input = gr.Video(format="mp4", include_audio=True)
                         with gr.TabItem("🖼️ Driving Image") as v_tab_image:
                             with gr.Accordion(open=True, label="Driving Image"):
                                 driving_image_input = gr.Image(type="filepath")
