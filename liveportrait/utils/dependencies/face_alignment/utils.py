@@ -10,7 +10,7 @@ import zipfile
 from skimage import io
 from skimage import color
 from numba import jit
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Optional
 
 from urllib.parse import urlparse
 from torch.serialization import MAP_LOCATION

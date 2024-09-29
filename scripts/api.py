@@ -183,7 +183,7 @@ def get_output_path(output_dir):
 def initialize_crop_model(
         crop_cfg: CropConfig,
         human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None,
-        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = None,
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'retinaface', 'sfd'] = None,
         face_alignment_detector_device: Literal[None, 'cuda', 'cpu', 'mps'] = None,
         face_alignment_detector_dtype: Literal[None, 'fp16', 'bf16', 'fp32'] = None):
     
@@ -193,7 +193,7 @@ def initialize_crop_model(
     )
 
     default_face_alignment_detector = cast(
-        Literal['blazeface', 'blazeface_back_camera', 'sfd'],
+        Literal['blazeface', 'blazeface_back_camera', 'retinaface', 'sfd'],
         cast(str, opts.data.get("live_portrait_face_alignment_detector", 'blazeface_back_camera')).lower().replace(' ', '_')
     )
 
@@ -368,7 +368,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         vx_ratio_crop_driving_video: float = 0.  # adjust y offset
         vy_ratio_crop_driving_video: float = -0.1  # adjust x offset
         human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
-        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = None
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'retinaface', 'sfd'] = None
         face_alignment_detector_device: Literal[None, 'cuda', 'cpu', 'mps'] = None
         face_alignment_detector_dtype: Literal[None, 'fp16', 'bf16', 'fp32'] = None
 
@@ -495,7 +495,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
         vy_ratio: float = -0.125  # the ratio to move the face to up or down in cropping space
         flag_do_rot: bool = True  # whether to conduct the rotation when flag_do_crop is True
         human_face_detector: Literal[None, 'insightface', 'mediapipe', 'facealignment'] = None # face detector to use for human inference ('insightface' by default)
-        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'sfd'] = None
+        face_alignment_detector: Literal[None, 'blazeface', 'blazeface_back_camera', 'retinaface', 'sfd'] = None
         face_alignment_detector_device: Literal[None, 'cuda', 'cpu', 'mps'] = None
         face_alignment_detector_dtype: Literal[None, 'fp16', 'bf16', 'fp32'] = None
         source_face_index: int = 0  # source image or video face index

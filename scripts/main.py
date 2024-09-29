@@ -75,7 +75,7 @@ def on_ui_tabs():
         )
 
         face_alignment_detector = cast(
-            Literal['blazeface', 'blazeface_back_camera', 'sfd'],
+            Literal['blazeface', 'blazeface_back_camera', 'retinaface', 'sfd'],
             cast(str, shared.opts.data.get("live_portrait_face_alignment_detector", 'blazeface_back_camera')).lower().replace(' ', '_')
         )
 
@@ -848,7 +848,7 @@ def on_ui_settings():
             default="BlazeFace Back Camera",
             label="Face alignment detector",
             component=gr.Radio,
-            component_args={"choices": ["BlazeFace", "BlazeFace Back Camera", "SFD"]},
+            component_args={"choices": ["BlazeFace", "BlazeFace Back Camera", "RetinaFace", "SFD"]},
             section=section,
         ),
     )

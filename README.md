@@ -48,7 +48,7 @@ Pickle files have all been converted to safetensors by Kijai. If necessary, they
 ### Face detectors
 For human mode, you can either use the original default [Insightface](https://github.com/deepinsight/insightface), or [Google's MediaPipe](https://github.com/google-ai-edge/mediapipe), or [Face Alignment](https://github.com/1adrianb/face-alignment) (see [Settings](#settings) section above or [API](#api) section below). 
 
-Biggest difference is the license: Insightface is strictly for NON-COMMERCIAL use. MediaPipe is a bit worse at detection, and can't run on GPU in Windows, though it's much faster on CPU compared to Insightface. Face Alignment can use blazeface back camera model (or SFD), it's far better for smaller faces than MediaPipe, that only can use the blazeface short model. The warmup on the first run when using this can take a long time, but subsequent runs are quick.
+Biggest difference is the license: Insightface is strictly for NON-COMMERCIAL use. MediaPipe is a bit worse at detection, and can't run on GPU in Windows, though it's much faster on CPU compared to Insightface. Face Alignment can use blazeface back camera model (or SFD or RetinaFace), it's far better for smaller faces than MediaPipe, that only can use the blazeface short model. The warmup on the first run when using this can take a long time, but subsequent runs are quick.
 
 Insightface models go here (automatically downloaded if the folder is not present during first run): `stable-diffusion-webui/models/insightface/models/buffalo_l`. If necessary, they can be downloaded from: https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip.
 
@@ -73,7 +73,7 @@ Parameters are the same as LivePortrait ones (see output of command `python infe
 - `save_output`: `true` if you want output videos to be saved in `output_dir` (as in LivePortrait), `false` otherwise.
 - `use_model_cache`: `true` if you want live portrait and face detector models to be cached for subsequent calls using same models, `false` otherwise.
 - `human_face_detector`: `insightface`, `mediapipe` or `facealignment`. Face detector to be used by human inference. Default to the `Human face detector` UI setting if defined or `insightface` if not set neither in settings nor in endpoint body.
-- `face_alignment_detector`: `blazeface`, `blazeface_back_camera` or `sfd`. Face detector to be used by human inference when Face Alignment is selected as `human_face_detector`. Default to the `Face alignment detector` UI setting if defined or `blazeface_back_camera` if not set neither in settings nor in endpoint body.
+- `face_alignment_detector`: `blazeface`, `blazeface_back_camera`, `retinaface` or `sfd`. Face detector to be used by human inference when Face Alignment is selected as `human_face_detector`. Default to the `Face alignment detector` UI setting if defined or `blazeface_back_camera` if not set neither in settings nor in endpoint body.
 - `face_alignment_detector_device`: `cuda`, `cpu` or `mps`. Device to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `cuda`.
 - `face_alignment_detector_dtype`: `fp16`, `bf16` or `fp32`. Device type to be used by face detector when Face Alignment is selected as `human_face_detector`. Default to `fp16`.
 - `source_face_index`: Face index (0-based) to be cropped in the source image or video if `flag_do_crop` is set to `True`.

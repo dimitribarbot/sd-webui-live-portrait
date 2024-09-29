@@ -50,8 +50,6 @@ class Cropper(object):
         else:
             try:
                 if torch.backends.mps.is_available():
-                    # Shape inference currently fails with CoreMLExecutionProvider
-                    # for the retinaface model
                     device = "mps"
                     face_analysis_wrapper_provider = ["CPUExecutionProvider"]
                 else:
