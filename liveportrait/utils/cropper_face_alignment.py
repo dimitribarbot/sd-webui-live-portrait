@@ -52,8 +52,6 @@ class Cropper(object):
         else:
             try:
                 if torch.backends.mps.is_available():
-                    # Shape inference currently fails with CoreMLExecutionProvider
-                    # for the retinaface model
                     device = "mps"
                 else:
                     device = "cuda"
@@ -67,11 +65,21 @@ class Cropper(object):
         )
         self.human_landmark_runner.warmup()
 
-        if 'blazeface' in face_detector:
-            face_detector_kwargs = {'back_model': face_detector == 'blazeface_back_camera'}
-            self.fa = FaceAlignment(LandmarksType.TWO_D, flip_input=False, device=face_detector_device, dtype=face_detector_dtype, face_detector='blazeface', face_detector_kwargs=face_detector_kwargs)
+        if face_detector == 'blazeface':
+            face_detector_kwargs = {'back_model': face_detector_dtype == 'blazeface_back_camera'}
+        elif face_detector == 'retinaface':
+            face_detector_kwargs = {'fp16': face_detector == torch.float16}
         else:
-            self.fa = FaceAlignment(LandmarksType.TWO_D, flip_input=False, device=face_detector_device, dtype=face_detector_dtype, face_detector=face_detector)
+            face_detector_kwargs = {}
+
+        self.fa = FaceAlignment(
+            LandmarksType.TWO_D,
+            flip_input=False,
+            device=face_detector_device,
+            dtype=face_detector_dtype,
+            face_detector=face_detector,
+            face_detector_kwargs=face_detector_kwargs
+        )
 
         if self.image_type == "animal_face":
             from .animal_landmark_runner import XPoseRunner as AnimalLandmarkRunner

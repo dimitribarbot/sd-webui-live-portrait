@@ -44,7 +44,7 @@ class CropConfig(PrintableConfig):
     vy_ratio_crop_driving_video: float = -0.1  # adjust x offset
     direction: str = "large-small"  # direction of cropping
     ########## face alignment option ##########
-    face_alignment_detector: Literal['blazeface', 'blazeface_back_camera', 'sfd'] = 'blazeface_back_camera'
+    face_alignment_detector: Literal['blazeface', 'blazeface_back_camera', 'retinaface', 'sfd'] = 'blazeface_back_camera'
     face_alignment_detector_device: Literal['cuda', 'cpu', 'mps'] = 'cuda'
     face_alignment_detector_dtype: Literal['fp16', 'bf16', 'fp32'] = 'fp16'
     ########## face index ##########
