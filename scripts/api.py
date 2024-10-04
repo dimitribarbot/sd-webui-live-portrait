@@ -512,7 +512,7 @@ def live_portrait_api(_: gr.Blocks, app: FastAPI):
             LivePortraitImageRetargetingOptions()
         ]
         retargeting_source_scale: float = 2.5  # the ratio of face area is smaller if scale is larger
-        flag_stitching_retargeting_input = True  # To apply stitching or not
+        flag_stitching_retargeting_input: bool = True  # To apply stitching or not
         flag_do_crop_input_retargeting_image: bool = True  # whether to crop the source portrait to the face-cropping space
 
 

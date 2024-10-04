@@ -1,8 +1,11 @@
 import datetime
-import gradio as gr
 import os.path as osp
 from pathlib import Path
 from typing import cast, Literal
+from packaging.version import parse
+
+import gradio.components
+import gradio as gr
 
 import modules.scripts as scripts
 from modules import devices, restart, script_callbacks, shared
@@ -23,6 +26,22 @@ repo_root = Path(__file__).parent.parent
 
 gradio_pipeline: GradioPipeline | None = None
 gradio_pipeline_animal: GradioPipelineAnimal | None = None
+
+gradio_version = parse(gr.__version__)
+
+# Forge patch
+if gradio_version.major > 3:
+    try:
+        def save_pil_to_file_patched(*args, **kwargs):
+            from modules import ui_tempdir
+            if "name" in kwargs:
+                kwargs = dict(filter(lambda item: item[0] != "name", kwargs.items()))
+            return ui_tempdir.save_pil_to_file(*args, **kwargs)
+        
+        gradio.processing_utils.save_pil_to_cache = save_pil_to_file_patched
+    except Exception as ex:
+        # ignore errors, save_pil_to_file may not exist
+        pass
 
 
 class Script(scripts.Script):
@@ -323,7 +342,7 @@ def on_ui_tabs():
                                     inputs=[driving_video_input],
                                     cache_examples=False,
                                 )
-                        with gr.TabItem("🎥 Driving Video (Webcam)") as v_tab_video_webcam:
+                        with gr.TabItem("🎥 Driving Video (Webcam)", visible=gradio_version.major < 4) as v_tab_video_webcam:
                             with gr.Accordion(open=True, label="Driving Video (Webcam)"):
                                 driving_video_webcam_input = gr.Video(format="mp4", include_audio=True)
                         with gr.TabItem("🖼️ Driving Image") as v_tab_image:
@@ -341,12 +360,15 @@ def on_ui_tabs():
                                     inputs=[driving_image_input],
                                     cache_examples=False,
                                 )
-                        with gr.TabItem("📷 Driving Image (Webcam)") as v_tab_image_webcam:
+                        with gr.TabItem("📷 Driving Image (Webcam)", visible=gradio_version.major < 4) as v_tab_image_webcam:
                             with gr.Accordion(open=True, label="Driving Image (Webcam)"):
                                 driving_image_webcam_input = gr.Image(type="filepath")
                         with gr.TabItem("📁 Driving Pickle") as v_tab_pickle:
                             with gr.Accordion(open=True, label="Driving Pickle"):
-                                driving_video_pickle_input = gr.File(type="file", file_types=[".pkl"])
+                                if gradio_version.major < 4:
+                                    driving_video_pickle_input = gr.File(type="file", file_types=[".pkl"])
+                                else:
+                                    driving_video_pickle_input = gr.File(type="filepath", file_types=[".pkl"])
                                 gr.Examples(
                                     examples=[
                                         [osp.join(example_video_dir, "d1.pkl")],
@@ -501,7 +523,7 @@ def on_ui_tabs():
                                 [osp.join(example_portrait_dir, "s12.jpg")],
                                 [osp.join(example_portrait_dir, "s22.jpg")],
                                 # [osp.join(example_portrait_dir, "s23.jpg")],
-                                [osp.join(example_portrait_dir, "s42.jpg")]
+                                [osp.join(example_portrait_dir, "s42.jpg")],
                             ],
                             inputs=[retargeting_input_image],
                             cache_examples=False,
@@ -676,7 +698,10 @@ def on_ui_tabs():
                         with gr.Tabs():
                             with gr.TabItem("📁 Driving Pickle") as tab_pickle:
                                 with gr.Accordion(open=True, label="Driving Pickle"):
-                                    driving_video_pickle_input = gr.File()
+                                    if gradio_version.major < 4:
+                                        driving_video_pickle_input = gr.File(type="file", file_types=[".pkl"])
+                                    else:
+                                        driving_video_pickle_input = gr.File(type="filepath", file_types=[".pkl"])
                                     gr.Examples(
                                         examples=[
                                             [osp.join(example_video_dir, "wink.pkl")],
