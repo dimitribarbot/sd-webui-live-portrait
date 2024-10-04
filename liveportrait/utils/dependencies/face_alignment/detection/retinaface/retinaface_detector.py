@@ -16,7 +16,7 @@ except:
 model_dir = os.path.join(models_path, "FaceAlignment")
 
 models_urls = {
-    'retinaface': 'https://github.com/dimitribarbot/sd-webui-live-portrait/releases/download/v0.2.3/Resnet50_Final.safetensors',
+    'retinaface': 'https://github.com/dimitribarbot/sd-webui-live-portrait/releases/download/v0.2.4/Resnet50_Final.safetensors',
 }
 
 from liveportrait.utils.dependencies.face_alignment.detection.retinaface.alignment import load_net, batch_detect
