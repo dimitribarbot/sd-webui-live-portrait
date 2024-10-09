@@ -28,7 +28,7 @@ By default, generated files can be found in the `stable-diffusion-webui/outputs/
 
 In the Automatic1111's SD WebUI settings tab, under the Live Portrait section, you can find the following configuration settings:
 
-![image](./assets/docs/extension-settings-2.png)
+![image](./assets/docs/extension-settings-3.png)
 
 - `Human face detector` (`live_portrait_human_face_detector` entry in `config.json`): configures the face detector model for human inference, either the default original InsightFace, MediaPipe or Face Alignment.
 - `Face alignment detector` (`live_portrait_face_alignment_detector` entry in `config.json`): configures the face detector model for human inference when using Face Alignment.
