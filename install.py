@@ -81,8 +81,8 @@ def get_onnxruntime_version_given_onnx_version():
     if installed_onnx_version:
         onnx_version = parse(installed_onnx_version)
         onnxruntime_version = onnx_to_onnx_runtime_versions.get(onnx_version.base_version, None)
-        return onnxruntime_version
-    return None
+        return installed_onnx_version, onnxruntime_version
+    return "", None
 
 
 def are_versions_similar(version_left: str, version_right: str):
@@ -108,6 +108,12 @@ def get_onnxruntime_extra_index():
     return ''
 
 
+def is_in_sd_webui_reactor_configuration(installed_onnx_version: str, onnxruntime_gpu_installed_version: str):
+    # See https://github.com/Gourieff/sd-webui-reactor/blob/main/install.py
+    # and https://github.com/Gourieff/sd-webui-reactor/blob/main/requirements.txt
+    return installed_onnx_version == "1.16.1" and onnxruntime_gpu_installed_version == "1.17.1"
+
+
 def install_onnxruntime():
     """
     Install onnxruntime or onnxruntime-gpu based on the availability of CUDA.
@@ -116,7 +122,7 @@ def install_onnxruntime():
     onnxruntime_installed_version = get_installed_version("onnxruntime")
     onnxruntime_gpu_installed_version = get_installed_version("onnxruntime-gpu")
 
-    expected_onnxruntime_version = get_onnxruntime_version_given_onnx_version()
+    installed_onnx_version, expected_onnxruntime_version = get_onnxruntime_version_given_onnx_version()
 
     if not onnxruntime_installed_version and not onnxruntime_gpu_installed_version:
         import torch.cuda as cuda  # torch import head to improve loading time
@@ -142,7 +148,8 @@ def install_onnxruntime():
                 f"sd-webui-live-portrait requirement: {onnxruntime_package}",
             )
         if onnxruntime_gpu_installed_version and expected_onnxruntime_version \
-                and not are_versions_similar(onnxruntime_gpu_installed_version, expected_onnxruntime_version):
+                and not are_versions_similar(onnxruntime_gpu_installed_version, expected_onnxruntime_version) \
+                and not is_in_sd_webui_reactor_configuration(installed_onnx_version, onnxruntime_gpu_installed_version):
             onnxruntime_gpu_package = f"onnxruntime-gpu=={expected_onnxruntime_version}{get_onnxruntime_extra_index()}"
 
             launch.run_pip(
