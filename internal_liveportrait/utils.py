@@ -1,6 +1,8 @@
-from internal_liveportrait.utils_base import *
 from pathlib import Path
 import os
+
+from internal_liveportrait.utils_base import *
+from liveportrait.config.animal_models import version_animals
 
 from modules.modelloader import load_file_from_url
 try:
@@ -12,6 +14,12 @@ except Exception:
         models_path = os.path.abspath("models")
 
 repo_root = Path(__file__).parent.parent
+
+
+animal_model_urls_prefix_by_version = {
+    "": "https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/animal",
+    "_v1.1": "https://github.com/dimitribarbot/sd-webui-live-portrait/releases/download/v0.3.0"
+}
 
 
 def get_xpose_lib_dir():
@@ -111,12 +119,13 @@ def download_liveportrait_animals_base_models():
     """
     Downloading liveportrait animals base models from huggingface.
     """
-    model_root = os.path.join(models_path, "liveportrait_animals", "base_models")
+    model_root = os.path.join(models_path, "liveportrait_animals", f"base_models{version_animals}")
+    model_urls_prefix = animal_model_urls_prefix_by_version[version_animals]
     model_urls = (
-        ("appearance_feature_extractor.safetensors", "https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/animal/appearance_feature_extractor.safetensors"),
-        ("motion_extractor.safetensors", "https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/animal/motion_extractor.safetensors"),
-        ("spade_generator.safetensors", "https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/animal/spade_generator.safetensors"),
-        ("warping_module.safetensors", "https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/animal/warping_module.safetensors"),
+        ("appearance_feature_extractor.safetensors", f"{model_urls_prefix}/appearance_feature_extractor.safetensors"),
+        ("motion_extractor.safetensors", f"{model_urls_prefix}/motion_extractor.safetensors"),
+        ("spade_generator.safetensors", f"{model_urls_prefix}/spade_generator.safetensors"),
+        ("warping_module.safetensors", f"{model_urls_prefix}/warping_module.safetensors"),
     )
     download_models(model_root, model_urls)
 

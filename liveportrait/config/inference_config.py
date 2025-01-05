@@ -11,6 +11,7 @@ import pickle as pkl
 from dataclasses import dataclass, field
 from typing import Literal, Tuple
 from .base_config import PrintableConfig, make_abs_path
+from .animal_models import version_animals
 
 try:
     from modules.paths_internal import models_path
@@ -37,10 +38,10 @@ class InferenceConfig(PrintableConfig):
     checkpoint_S: str = os.path.join(models_path, 'liveportrait', 'retargeting_models', 'stitching_retargeting_module.safetensors')  # path to checkpoint to S and R_eyes, R_lip
 
     # ANIMAL MODEL CONFIG, NOT EXPORTED PARAMS
-    checkpoint_F_animal: str = os.path.join(models_path, 'liveportrait_animals', 'base_models', 'appearance_feature_extractor.safetensors')  # path to checkpoint of F
-    checkpoint_M_animal: str = os.path.join(models_path, 'liveportrait_animals', 'base_models', 'motion_extractor.safetensors')  # path to checkpoint of M
-    checkpoint_G_animal: str = os.path.join(models_path, 'liveportrait_animals', 'base_models', 'spade_generator.safetensors')  # path to checkpoint of G
-    checkpoint_W_animal: str = os.path.join(models_path, 'liveportrait_animals', 'base_models', 'warping_module.safetensors')  # path to checkpoint of W
+    checkpoint_F_animal: str = os.path.join(models_path, 'liveportrait_animals', f'base_models{version_animals}', 'appearance_feature_extractor.safetensors')  # path to checkpoint of F
+    checkpoint_M_animal: str = os.path.join(models_path, 'liveportrait_animals', f'base_models{version_animals}', 'motion_extractor.safetensors')  # path to checkpoint of M
+    checkpoint_G_animal: str = os.path.join(models_path, 'liveportrait_animals', f'base_models{version_animals}', 'spade_generator.safetensors')  # path to checkpoint of G
+    checkpoint_W_animal: str = os.path.join(models_path, 'liveportrait_animals', f'base_models{version_animals}', 'warping_module.safetensors')  # path to checkpoint of W
     checkpoint_S_animal: str = os.path.join(models_path, 'liveportrait_animals', 'retargeting_models', 'stitching_retargeting_module.safetensors')  # path to checkpoint to S and R_eyes, R_lip, NOTE: use human temporarily!
 
     # EXPORTED PARAMS
