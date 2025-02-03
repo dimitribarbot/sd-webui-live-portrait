@@ -45,7 +45,7 @@ class XPoseRunner(object):
         args = Config.fromfile(model_config_path)
         args.device = device
         model = build_model(args)
-        checkpoint = get_loaded_model(model_checkpoint_path, device)
+        checkpoint = get_loaded_model(model_checkpoint_path, device, weights_only=False)
         load_res = model.load_state_dict(clean_state_dict(checkpoint["model"]), strict=False)
         model.eval()
         return model

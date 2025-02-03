@@ -131,12 +131,12 @@ def filter_checkpoint_for_model(checkpoint, prefix):
     return filtered_checkpoint
 
 
-def get_loaded_model(ckpt_path, device):
+def get_loaded_model(ckpt_path, device, weights_only=False):
     _, extension = os.path.splitext(ckpt_path)
     if extension.lower() == ".safetensors":
         return safetensors.torch.load_file(ckpt_path, device=device)
     else:
-        return unsafe_torch_load(ckpt_path, map_location=lambda storage, loc: storage)
+        return unsafe_torch_load(ckpt_path, map_location=lambda storage, loc: storage, weights_only=weights_only)
 
 
 def load_model(ckpt_path, model_config, device, model_type):
