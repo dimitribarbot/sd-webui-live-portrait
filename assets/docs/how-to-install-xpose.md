@@ -105,7 +105,7 @@ webui.sh --debug
 
 In Windows:
 ```bash
-set CUDA_HOME=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+set CUDA_HOME="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6"
 webui.bat --debug
 ```
 
