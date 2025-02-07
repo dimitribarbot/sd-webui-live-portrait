@@ -92,3 +92,21 @@ To not impact performance when launching WebUI, by default we do not retry XPose
 - or manually delete the `liveportrait/utils/dependencies/XPose/models/UniPose/ops/lib` folder in the extension folder, which is by default `stable-diffusion-webui/extensions/sd-webui-live-portrait` (in that case, folder to remove is `stable-diffusion-webui/extensions/sd-webui-live-portrait/liveportrait/utils/dependencies/XPose/models/UniPose/ops/lib`) and restart your SD WebUI.  
 
 In case this procedure is not working, you can try the [following one](./how-to-install-xpose-old.md) by downgrading your CUDA Toolkit to v11.8.
+
+## SD.NEXT
+
+This extension should be compatible with SD.NEXT. However, to install XPose, you should first set the CUDA_HOME environment variable to your cuda installation folder before starting your SD.NEXT application:
+
+In Linux:
+```bash
+export CUDA_HOME=/usr/local/cuda-12.6
+webui.sh --debug
+```
+
+In Windows:
+```bash
+set CUDA_HOME=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+webui.bat --debug
+```
+
+Replacing the 12.6 version with your current CUDA version.

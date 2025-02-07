@@ -8,7 +8,7 @@ import gradio.components
 import gradio as gr
 
 import modules.scripts as scripts
-from modules import devices, restart, script_callbacks, shared
+from modules import devices, script_callbacks, shared
 from modules.paths_internal import data_path
 
 from liveportrait.utils.helper import load_description
@@ -20,6 +20,13 @@ from liveportrait.gradio_pipeline import GradioPipeline, GradioPipelineAnimal
 from internal_liveportrait.utils import \
     download_insightface_models, download_liveportrait_animals_models, download_liveportrait_models, download_liveportrait_landmark_model, \
     IS_MACOS, has_xpose_lib, del_xpose_lib_dir
+
+is_sd_next = False
+try:
+    from modules import restart
+except:
+    # try to use reload_server in case of SD.NEXT
+    is_sd_next = hasattr(shared, "restart_server")
 
 
 repo_root = Path(__file__).parent.parent
@@ -59,7 +66,7 @@ class Script(scripts.Script):
 
 
 def on_ui_tabs():
-    if shared.cmd_opts.nowebui:
+    if hasattr(shared.cmd_opts, "nowebui") and shared.cmd_opts.nowebui:
         return
 
     def clear_model_cache():
@@ -196,10 +203,14 @@ def on_ui_tabs():
     
     def reinstall_xpose(*args, **kwargs):
         del_xpose_lib_dir()
-        if restart.is_restartable:
-            restart.restart_program()
+
+        if is_sd_next:
+            shared.restart_server(restart=True)
         else:
-            restart.stop_program()
+            if restart.is_restartable:
+                restart.restart_program()
+            else:
+                restart.stop_program()
 
     # assets
     title_md = repo_root / "assets/gradio/gradio_title.md"
@@ -659,7 +670,7 @@ def on_ui_tabs():
                 reinstall_xpose_button = gr.Button("Reinstall XPose and Restart UI", variant="primary")
                 reinstall_xpose_button.click(
                     fn=reinstall_xpose,
-                    _js='restart_reload',
+                    _js="restartReload" if is_sd_next else "restart_reload",
                     inputs=[],
                     outputs=[],
                 )

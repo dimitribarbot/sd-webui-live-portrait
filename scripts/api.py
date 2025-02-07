@@ -1,5 +1,6 @@
 import base64
 import datetime
+import ipaddress
 import imageio.v3 as iio
 import os
 import requests
@@ -13,7 +14,6 @@ from typing import Any, cast, Dict, List, Literal
 import cv2
 
 from liveportrait.gradio_pipeline import GradioPipeline
-from modules.api.api import verify_url
 from modules.devices import torch_gc
 from modules.shared import opts
 
@@ -35,6 +35,24 @@ temp_dir = make_abs_path('../../tmp')
 live_portrait_pipeline: LivePortraitPipeline | None = None
 live_portrait_pipeline_animal: LivePortraitPipelineAnimal | None = None
 retargeting_pipeline: GradioPipeline | None = None
+
+def verify_url(url):
+    """Returns True if the url refers to a global resource."""
+
+    import socket
+    from urllib.parse import urlparse
+    try:
+        parsed_url = urlparse(url)
+        domain_name = parsed_url.netloc
+        host = socket.gethostbyname_ex(domain_name)
+        for ip in host[2]:
+            ip_addr = ipaddress.ip_address(ip)
+            if not ip_addr.is_global:
+                return False
+    except Exception:
+        return False
+
+    return True
 
 def clear_model_cache():
     global live_portrait_pipeline, live_portrait_pipeline_animal, retargeting_pipeline
