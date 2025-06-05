@@ -68,7 +68,7 @@ class Cropper(object):
         if face_detector == 'blazeface':
             face_detector_kwargs = {'back_model': face_detector_dtype == 'blazeface_back_camera'}
         elif face_detector == 'retinaface':
-            face_detector_kwargs = {'fp16': face_detector == torch.float16}
+            face_detector_kwargs = {'fp16': face_detector == torch.float16, 'max_size': 1280}
         else:
             face_detector_kwargs = {}
 

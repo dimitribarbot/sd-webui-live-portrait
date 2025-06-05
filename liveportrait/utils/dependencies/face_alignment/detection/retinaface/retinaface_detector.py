@@ -26,7 +26,7 @@ class RetinaFaceDetector(FaceDetector):
     '''RetinaFace Detector.
     '''
 
-    def __init__(self, device, path_to_detector=None, verbose=False, threshold=0.5, fp16=True):
+    def __init__(self, device, path_to_detector=None, verbose=False, threshold=0.5, max_size=-1, fp16=True):
         super(RetinaFaceDetector, self).__init__(device, verbose)
 
         # Initialise the face detector
@@ -34,6 +34,7 @@ class RetinaFaceDetector(FaceDetector):
             path_to_detector = self.load_from_url(models_urls['retinaface'], model_dir)
 
         self.threshold = threshold
+        self.max_size = max_size
         self.fp16 = fp16
 
         self.face_detector = load_net(path_to_detector, self.device)
@@ -46,6 +47,7 @@ class RetinaFaceDetector(FaceDetector):
         detected_faces = batch_detect(
             self.face_detector,
             [image],
+            max_size=self.max_size,
             threshold=self.threshold,
             return_dict=True,
             fp16=self.fp16,
@@ -60,6 +62,7 @@ class RetinaFaceDetector(FaceDetector):
             self.face_detector,
             tensor,
             is_tensor=True,
+            max_size=self.max_size,
             threshold=self.threshold,
             return_dict=True,
             fp16=self.fp16,
